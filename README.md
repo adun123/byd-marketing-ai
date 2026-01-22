@@ -2,6 +2,39 @@
 
 A full-stack application with React frontend and Node.js/Express backend, configured for deployment on Vercel.
 
+## Environment Variables
+
+### Backend (.env)
+Create a `.env` file in the `backend/` directory:
+
+```env
+# Server Configuration
+PORT=4000
+NODE_ENV=development
+
+# Required: Google Gemini API Key (for AI image generation)
+GEMINI_API_KEY=your_actual_gemini_api_key_here
+
+# Optional: Add other environment variables as needed
+# DATABASE_URL=your_database_connection_string
+# JWT_SECRET=your_jwt_secret_key
+```
+
+**Important:** Get your Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+
+### Frontend (.env)
+Create a `.env` file in the `frontend/` directory:
+
+```env
+# API Configuration
+VITE_API_URL=http://localhost:4000
+
+# For production (Vercel), this will be /api automatically
+# VITE_API_URL=/api
+```
+
+**Note:** Environment variables in the frontend must be prefixed with `VITE_` to be accessible in your React components.
+
 ## Local Development
 
 ### Prerequisites
