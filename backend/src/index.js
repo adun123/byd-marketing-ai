@@ -10,6 +10,11 @@ app.use(express.json());
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Backend running on :${PORT}`));
+// For Vercel serverless functions, export the app
+// For local development, start the server if this file is run directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () => console.log(`Backend running on :${PORT}`));
+}
+
 export default app;
