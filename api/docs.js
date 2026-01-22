@@ -1,6 +1,6 @@
 const app = require('../backend/src/index.js').default;
 
 module.exports = function handler(req, res) {
-  // Delegate to the Express app for the /api info endpoint
+  // Delegate to the Express app
   return app(req, res);
 }
