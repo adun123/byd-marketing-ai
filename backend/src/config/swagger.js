@@ -3,7 +3,7 @@ const swaggerDocument = {
   info: {
     title: "BYD Content Marketing AI API",
     version: "1.0.0",
-    description: "API untuk generate konten marketing ",
+    description: "API for generating marketing content using Gemini AI",
   },
   servers: [
     {
@@ -14,18 +14,18 @@ const swaggerDocument = {
   tags: [
     { name: "Marketing", description: "Marketing content generation" },
     { name: "Image Generation", description: "Text to image generation" },
-    { name: "Image Editing", description: "Edit dan modify gambar" },
-    { name: "Utility", description: "Resize, combine, dan utility lainnya" },
+    { name: "Image Editing", description: "Edit and modify images" },
+    { name: "Utility", description: "Upscale, combine, and other utilities" },
   ],
   paths: {
     "/image/marketing/options": {
       get: {
         tags: ["Marketing"],
         summary: "Get Marketing Options",
-        description: "Ambil semua opsi platform, content type, dan target audience",
+        description: "Get all platform, content type, and target audience options",
         responses: {
           200: {
-            description: "Berhasil mengambil data",
+            description: "Successfully retrieved data",
             content: {
               "application/json": {
                 schema: {
@@ -46,7 +46,7 @@ const swaggerDocument = {
       post: {
         tags: ["Marketing"],
         summary: "Generate Marketing Content",
-        description: "Generate konten marketing berdasarkan platform, tipe konten, dan target audience",
+        description: "Generate marketing content based on platform, content type, and target audience",
         requestBody: {
           required: true,
           content: {
@@ -58,22 +58,22 @@ const swaggerDocument = {
                   platform: {
                     type: "string",
                     enum: ["tiktok-reels", "youtube-shorts", "instagram-post", "linkedin"],
-                    description: "Platform target",
+                    description: "Target platform",
                   },
                   contentType: {
                     type: "string",
                     enum: ["edu-ent", "soft-campaign"],
-                    description: "Tipe konten",
+                    description: "Content type",
                   },
                   targetAudience: {
                     type: "string",
                     enum: ["genz-balanced", "genz-emotional", "genalpha-balanced", "genalpha-emotional"],
                     description: "Target audience",
                   },
-                  product: { type: "string", description: "Nama produk/topik" },
-                  brand: { type: "string", description: "Nama brand" },
+                  product: { type: "string", description: "Product name/topic" },
+                  brand: { type: "string", description: "Brand name" },
                   message: { type: "string", description: "Key message" },
-                  customAspectRatio: { type: "string", description: "Custom aspect ratio (contoh: 4:5)" },
+                  customAspectRatio: { type: "string", description: "Custom aspect ratio (e.g. 4:5)" },
                   customWidth: { type: "integer", description: "Custom width" },
                   customHeight: { type: "integer", description: "Custom height" },
                   image: { type: "string", format: "binary", description: "Reference image (optional)" },
@@ -83,8 +83,8 @@ const swaggerDocument = {
           },
         },
         responses: {
-          200: { description: "Berhasil generate konten" },
-          400: { description: "Parameter tidak valid" },
+          200: { description: "Successfully generated content" },
+          400: { description: "Invalid parameters" },
           500: { description: "Server error" },
         },
       },
@@ -93,7 +93,7 @@ const swaggerDocument = {
       post: {
         tags: ["Image Generation"],
         summary: "Text to Image",
-        description: "Generate gambar dari text prompt dengan opsi jumlah hasil",
+        description: "Generate images from text prompt with number of results option",
         requestBody: {
           required: true,
           content: {
@@ -102,18 +102,18 @@ const swaggerDocument = {
                 type: "object",
                 required: ["prompt"],
                 properties: {
-                  prompt: { type: "string", description: "Deskripsi gambar yang ingin dibuat" },
-                  style: { type: "string", description: "Style gambar" },
+                  prompt: { type: "string", description: "Description of the image to create" },
+                  style: { type: "string", description: "Image style" },
                   aspectRatio: { type: "string", description: "Aspect ratio" },
                   brand: { type: "string", description: "Brand name" },
-                  numberOfResults: { type: "integer", minimum: 1, maximum: 4, default: 1, description: "Jumlah gambar yang akan digenerate (1-4)" },
+                  numberOfResults: { type: "integer", minimum: 1, maximum: 4, default: 1, description: "Number of images to generate (1-4)" },
                 },
               },
             },
           },
         },
         responses: {
-          200: { description: "Berhasil generate gambar" },
+          200: { description: "Successfully generated image" },
           400: { description: "Prompt required" },
           500: { description: "Server error" },
         },
@@ -123,7 +123,7 @@ const swaggerDocument = {
       post: {
         tags: ["Image Editing"],
         summary: "Edit Image",
-        description: "Edit gambar berdasarkan instruksi text",
+        description: "Edit image based on text instructions",
         requestBody: {
           required: true,
           content: {
@@ -132,17 +132,17 @@ const swaggerDocument = {
                 type: "object",
                 required: ["image", "prompt"],
                 properties: {
-                  image: { type: "string", format: "binary", description: "Gambar yang akan diedit" },
-                  prompt: { type: "string", description: "Instruksi edit" },
-                  preserveStyle: { type: "string", enum: ["true", "false"], description: "Pertahankan style" },
+                  image: { type: "string", format: "binary", description: "Image to edit" },
+                  prompt: { type: "string", description: "Edit instructions" },
+                  preserveStyle: { type: "string", enum: ["true", "false"], description: "Preserve original style" },
                 },
               },
             },
           },
         },
         responses: {
-          200: { description: "Berhasil edit gambar" },
-          400: { description: "Image dan prompt required" },
+          200: { description: "Successfully edited image" },
+          400: { description: "Image and prompt required" },
           500: { description: "Server error" },
         },
       },
@@ -151,7 +151,7 @@ const swaggerDocument = {
       post: {
         tags: ["Image Editing"],
         summary: "Add/Remove Elements",
-        description: "Tambah atau hapus elemen dari gambar",
+        description: "Add or remove elements from an image",
         requestBody: {
           required: true,
           content: {
@@ -161,18 +161,18 @@ const swaggerDocument = {
                 required: ["image", "action", "element"],
                 properties: {
                   image: { type: "string", format: "binary" },
-                  action: { type: "string", enum: ["add", "remove"], description: "Aksi" },
-                  element: { type: "string", description: "Elemen yang akan ditambah/dihapus" },
-                  position: { type: "string", description: "Posisi (untuk add)" },
-                  description: { type: "string", description: "Deskripsi tambahan" },
+                  action: { type: "string", enum: ["add", "remove"], description: "Action" },
+                  element: { type: "string", description: "Element to add/remove" },
+                  position: { type: "string", description: "Position (for add)" },
+                  description: { type: "string", description: "Additional description" },
                 },
               },
             },
           },
         },
         responses: {
-          200: { description: "Berhasil modify elemen" },
-          400: { description: "Parameter tidak valid" },
+          200: { description: "Successfully modified element" },
+          400: { description: "Invalid parameters" },
           500: { description: "Server error" },
         },
       },
@@ -181,7 +181,7 @@ const swaggerDocument = {
       post: {
         tags: ["Image Editing"],
         summary: "Mask Edit (Inpainting)",
-        description: "Edit bagian tertentu gambar menggunakan mask atau deskripsi area",
+        description: "Edit specific parts of an image using mask or area description",
         requestBody: {
           required: true,
           content: {
@@ -190,18 +190,18 @@ const swaggerDocument = {
                 type: "object",
                 required: ["image", "prompt"],
                 properties: {
-                  image: { type: "string", format: "binary", description: "Gambar utama" },
+                  image: { type: "string", format: "binary", description: "Main image" },
                   mask: { type: "string", format: "binary", description: "Mask image (optional)" },
-                  prompt: { type: "string", description: "Instruksi edit" },
-                  maskDescription: { type: "string", description: "Deskripsi area yang akan diedit (jika tanpa mask)" },
+                  prompt: { type: "string", description: "Edit instructions" },
+                  maskDescription: { type: "string", description: "Description of area to edit (if no mask)" },
                 },
               },
             },
           },
         },
         responses: {
-          200: { description: "Berhasil edit" },
-          400: { description: "Parameter tidak valid" },
+          200: { description: "Successfully edited" },
+          400: { description: "Invalid parameters" },
           500: { description: "Server error" },
         },
       },
@@ -210,7 +210,7 @@ const swaggerDocument = {
       post: {
         tags: ["Utility"],
         summary: "Combine Images",
-        description: "Gabungkan beberapa gambar menjadi satu",
+        description: "Combine multiple images into one",
         requestBody: {
           required: true,
           content: {
@@ -219,8 +219,8 @@ const swaggerDocument = {
                 type: "object",
                 required: ["images", "prompt"],
                 properties: {
-                  images: { type: "array", items: { type: "string", format: "binary" }, description: "2-5 gambar" },
-                  prompt: { type: "string", description: "Instruksi combine" },
+                  images: { type: "array", items: { type: "string", format: "binary" }, description: "2-5 images" },
+                  prompt: { type: "string", description: "Combine instructions" },
                   layout: { type: "string", description: "Layout" },
                   style: { type: "string", description: "Style" },
                 },
@@ -229,8 +229,8 @@ const swaggerDocument = {
           },
         },
         responses: {
-          200: { description: "Berhasil combine" },
-          400: { description: "Minimal 2 gambar required" },
+          200: { description: "Successfully combined" },
+          400: { description: "At least 2 images required" },
           500: { description: "Server error" },
         },
       },
@@ -239,7 +239,7 @@ const swaggerDocument = {
       post: {
         tags: ["Utility"],
         summary: "Generate 360 View",
-        description: "Generate multiple angle views dengan konsistensi karakter",
+        description: "Generate multiple angle views with character consistency",
         requestBody: {
           required: true,
           content: {
@@ -248,17 +248,17 @@ const swaggerDocument = {
                 type: "object",
                 properties: {
                   image: { type: "string", format: "binary", description: "Reference image (optional)" },
-                  characterDescription: { type: "string", description: "Deskripsi karakter (jika tanpa image)" },
-                  prompt: { type: "string", description: "Instruksi tambahan" },
-                  angles: { type: "array", items: { type: "string" }, description: "Angle yang diinginkan" },
+                  characterDescription: { type: "string", description: "Character description (if no image)" },
+                  prompt: { type: "string", description: "Additional instructions" },
+                  angles: { type: "array", items: { type: "string" }, description: "Desired angles" },
                 },
               },
             },
           },
         },
         responses: {
-          200: { description: "Berhasil generate views" },
-          400: { description: "Image atau characterDescription required" },
+          200: { description: "Successfully generated views" },
+          400: { description: "Image or characterDescription required" },
           500: { description: "Server error" },
         },
       },
@@ -267,7 +267,7 @@ const swaggerDocument = {
       post: {
         tags: ["Utility"],
         summary: "Upscale Image",
-        description: "Upscale gambar ke resolusi lebih tinggi (HD, FullHD, 2K, 4K)",
+        description: "Upscale image to higher resolution (HD, FullHD, 2K, 4K)",
         requestBody: {
           required: true,
           content: {
@@ -277,9 +277,9 @@ const swaggerDocument = {
                 required: ["image"],
                 properties: {
                   image: { type: "string", format: "binary" },
-                  preset: { type: "string", enum: ["hd", "fullhd", "2k", "4k"], description: "Preset resolusi" },
-                  width: { type: "integer", description: "Custom width (jika tanpa preset)" },
-                  height: { type: "integer", description: "Custom height (jika tanpa preset)" },
+                  preset: { type: "string", enum: ["hd", "fullhd", "2k", "4k"], description: "Resolution preset" },
+                  width: { type: "integer", description: "Custom width (if no preset)" },
+                  height: { type: "integer", description: "Custom height (if no preset)" },
                   quality: { type: "integer", minimum: 1, maximum: 100, default: 90, description: "Output quality" },
                 },
               },
@@ -287,7 +287,7 @@ const swaggerDocument = {
           },
         },
         responses: {
-          200: { description: "Berhasil upscale" },
+          200: { description: "Successfully upscaled" },
           400: { description: "Image required" },
           500: { description: "Server error" },
         },
@@ -297,7 +297,7 @@ const swaggerDocument = {
       post: {
         tags: ["Utility"],
         summary: "Conversational Image Chat",
-        description: "Multi-turn conversation untuk editing gambar",
+        description: "Multi-turn conversation for image editing",
         requestBody: {
           required: true,
           content: {
@@ -307,7 +307,7 @@ const swaggerDocument = {
                 required: ["message"],
                 properties: {
                   image: { type: "string", format: "binary", description: "Current image (optional)" },
-                  message: { type: "string", description: "Pesan user" },
+                  message: { type: "string", description: "User message" },
                   conversationHistory: { type: "string", description: "JSON array conversation history" },
                 },
               },
@@ -315,7 +315,7 @@ const swaggerDocument = {
           },
         },
         responses: {
-          200: { description: "Berhasil" },
+          200: { description: "Success" },
           400: { description: "Message required" },
           500: { description: "Server error" },
         },

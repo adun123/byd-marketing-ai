@@ -516,7 +516,7 @@ export const generateMarketingContent = async (req, res) => {
 
     const contentTypes = {
       "edu-ent": {
-        name: "Murni Edu/Ent",
+        name: "Pure Edu/Ent",
         description: "Educational and entertaining content, neutral tone, informative",
         approach: "Focus on delivering value through education or entertainment without direct selling",
       },
@@ -633,8 +633,8 @@ export const getMarketingOptions = (req, res) => {
       { id: "linkedin", name: "LinkedIn", aspectRatio: "1.91:1", resolution: "1200x628" },
     ],
     contentTypes: [
-      { id: "edu-ent", name: "Murni Edu/Ent", description: "Netral & Edukatif" },
-      { id: "soft-campaign", name: "Soft Campaign", description: "Sisipan Pesan Positif" },
+      { id: "edu-ent", name: "Pure Edu/Ent", description: "Neutral & Educational" },
+      { id: "soft-campaign", name: "Soft Campaign", description: "Subtle Positive Messaging" },
     ],
     targetAudiences: [
       { id: "genz-balanced", name: "Gen Z - Balanced", description: "Career, Skills, Education, Tech" },
