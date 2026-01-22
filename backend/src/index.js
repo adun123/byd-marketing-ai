@@ -1,15 +1,71 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+import swaggerUi from "swagger-ui-express";
+import swaggerDocument from "./config/swagger.js";
+import imageRoutes from "./routes/imageRoutes.js";
+import { checkGeminiHealth } from "./config/gemini.js";
 
 dotenv.config();
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-app.get("/health", (req, res) => res.json({ ok: true }));
+const app = express();
+
+app.use(cors());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+
+app.use("/outputs", express.static(path.join(__dirname, "../outputs")));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+app.get("/health", (req, res) => res.json({ ok: true, timestamp: new Date().toISOString() }));
+
+app.get("/health/gemini", async (req, res) => {
+  const health = await checkGeminiHealth();
+  res.status(health.status === "ok" ? 200 : 503).json(health);
+});
+
+app.use("/api/image", imageRoutes);
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+app.get("/api", (req, res) => {
+  res.json({
+    name: "BYD Content Marketing AI API",
+    version: "1.0.0",
+    endpoints: {
+      "POST /api/image/generate": "Generate image dari text prompt",
+      "POST /api/image/edit": "Edit gambar berdasarkan instruksi",
+      "POST /api/image/elements": "Tambah/hapus elemen dari gambar",
+      "POST /api/image/mask-edit": "Edit bagian tertentu dengan mask",
+      "POST /api/image/combine": "Gabungkan multiple gambar",
+      "POST /api/image/360-view": "Generate 360 view / multiple angles",
+      "POST /api/image/resize": "Ubah resolusi dan aspek rasio",
+      "POST /api/image/chat": "Conversational image editing",
+      "POST /api/image/marketing": "Generate marketing content",
+    },
+  });
+});
+
+app.use((err, req, res, next) => {
+  console.error("Error:", err);
+  res.status(err.status || 500).json({
+    error: err.message || "Internal Server Error",
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+  });
+});
+
+app.use((req, res) => {
+  res.status(404).json({ error: "Endpoint not found" });
+});
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Backend running on :${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Backend running on http://localhost:${PORT}`);
+  console.log(`API docs available at http://localhost:${PORT}/docs`);
+});
+
 export default app;
