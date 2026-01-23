@@ -1,4 +1,4 @@
-# BYD Content Marketing AI Po
+# BYD Content Marketing AI PoC
 
 A full-stack application with React frontend and Node.js/Express backend, configured for deployment on Vercel.
 
