@@ -1,5 +1,5 @@
 {
-  "name": "byd-content-marketing-ai-po",
+  "name": "byd-content-ai",
   "version": "1.0.0",
   "description": "Full-stack application with React frontend and Node.js backend",
   "scripts": {

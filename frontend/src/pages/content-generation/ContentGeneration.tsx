@@ -1,45 +1,24 @@
 // src/pages/content-generation/ContenGeneration.tsx
 import * as React from "react";
 import SideNav from "./SideNav";
-import PromptPanel from "./PromptPanel";
 import Composer from "./Composer";
 import OptionsPanel from "./OptionsPanel";
 import type { Workflow, Objective, Channel, VisualStyle } from "./OptionsPanel";
 
 import type { ContentGenTab } from "./SideNav";
-
-import type {
-  ContentGenMode,
-  PromptPanelValues,
-} from "./PromptPanel";
 import { useState } from "react";
 
 
-import { Download, Trash2 } from "lucide-react";
-
-type GeneratedItem = {
+type DummyOutput = {
   id: string;
-  mode: ContentGenMode;
-  createdAt: number;
   prompt: string;
-  // placeholder for real output (url/base64/etc)
-  status: "queued" | "done" | "error";
+  createdAt: number;
 };
-
-function cn(...s: Array<string | undefined | false>) {
-  return s.filter(Boolean).join(" ");
-
-
-
-
-
-}
 
 
 
 export default function ContenGeneration() {
   const [tab, setTab] = React.useState<ContentGenTab>("image");
-  const mode: ContentGenMode = tab === "image" ? "image" : "video";
 
   const [isGenerating, setIsGenerating] = React.useState(false);
 
@@ -54,17 +33,10 @@ const [visualStyle, setVisualStyle] = useState<VisualStyle>("clean");
 
 const [aspect, setAspect] = useState<"1:1" | "4:5" | "16:9" | "9:16">("1:1");
 const [guidance, setGuidance] = useState(7);
-const [seed, setSeed] = useState<number | "random" | "none">("random");
 
   const [prompt, setPrompt] = useState("");
   const [attachments, setAttachments] = useState<any[]>([]);
 
-  
-type DummyOutput = {
-  id: string;
-  prompt: string;
-  createdAt: number;
-};
 
 const [items, setItems] = useState<DummyOutput[]>([]);
  function handleGenerate({ prompt }: { prompt: string }) {
@@ -85,10 +57,6 @@ const [items, setItems] = useState<DummyOutput[]>([]);
   }, 600);
 }
 
-
-  function clearHistory() {
-    setItems([]);
-  }
 
 return (
   <div className="flex min-h-[calc(100vh-64px)] pb-20 md:pb-0">
@@ -164,7 +132,7 @@ return (
               )}
             </div>
           </div>
-          
+
 
            {/* Floating composer */}
             <div className="sticky bottom-3">
@@ -189,12 +157,10 @@ return (
 
               </div>
             </div>
-          
 
-          
-         
 
-        
+
+
         </section>
       </div>
     </div>
