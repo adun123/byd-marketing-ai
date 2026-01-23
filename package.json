@@ -2,6 +2,7 @@
   "name": "byd-content-ai",
   "version": "1.0.0",
   "description": "Full-stack application with React frontend and Node.js backend",
+  "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "cd frontend && npm run dev",
