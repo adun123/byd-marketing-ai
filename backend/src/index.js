@@ -7,7 +7,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "./config/swagger.js";
 import imageRoutes from "./routes/imageRoutes.js";
 import { checkGeminiHealth } from "./config/gemini.js";
-
+import trendsRoutes from "./routes/trendsRoutes.js";
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -30,6 +30,7 @@ app.get("/health/gemini", async (req, res) => {
 });
 
 app.use("/api/image", imageRoutes);
+app.use("/api/trends", trendsRoutes);
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.get("/api", (req, res) => {
@@ -64,8 +65,11 @@ app.use((req, res) => {
 
 // For Vercel serverless functions, export the app
 // For local development, start the server if this file is run directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4000;
+
+// Kalau jalan di Vercel, env VERCEL biasanya ada.
+// Kalau local dev, VERCEL tidak ada → kita listen normal.
+if (!process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`Backend running on http://localhost:${PORT}`);
     console.log(`API docs available at http://localhost:${PORT}/docs`);
@@ -73,3 +77,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 export default app;
+
