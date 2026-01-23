@@ -19,6 +19,15 @@ import {
 
 const router = express.Router();
 
+//only run multer when request is multipart
+const maybeUploadSingle = (req, res, next) => {
+  const ct = req.headers["content-type"] || "";
+  if (ct.includes("multipart/form-data")) {
+    return uploadSingle(req, res, next);
+  }
+  return next();
+};
+
 router.post("/generate", textToImage);
 router.post("/edit", uploadSingle, imageToImage);
 router.post("/elements", uploadSingle, modifyElements);
@@ -27,7 +36,9 @@ router.post("/combine", uploadMultiple, combineImages);
 router.post("/360-view", uploadSingle, generate360View);
 router.post("/upscale", uploadSingle, upscaleImageEndpoint);
 router.post("/chat", uploadSingle, imageChat);
-router.post("/marketing", uploadSingle, generateMarketingContent);
+// router.post("/marketing", uploadSingle, generateMarketingContent);
+router.post("/marketing", maybeUploadSingle, generateMarketingContent);
+
 router.get("/marketing/options", getMarketingOptions);
 
 export default router;

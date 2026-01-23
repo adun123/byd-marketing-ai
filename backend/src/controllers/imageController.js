@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { getImageModel, getVisionModel } from "../config/gemini.js";
+import { getImageModel, getTextModel } from "../config/gemini.js";
 import {
   prepareImagePart,
   saveBase64Image,
@@ -7,6 +7,8 @@ import {
   upscaleImage,
   getImageInfo,
 } from "../utils/imageUtils.js";
+
+
 
 export const textToImage = async (req, res) => {
   try {
@@ -485,7 +487,78 @@ export const generateMarketingContent = async (req, res) => {
       });
     }
 
+    const { mode } = req.body;
+    if (mode === "ideas") {
+        try {
+          const prompt = `
+      Kamu adalah social media strategist Indonesia.
+      Buat ide konten untuk:
+      - Platform: ${platform}
+      - Content type: ${contentType}
+      - Target audience: ${targetAudience}
+      - Product/Topik: ${product || "-"}
+      - Brand: ${brand || "-"}
+      - Key message: ${message || "-"}
+
+      Keluarkan JSON VALID tanpa markdown, tanpa penjelasan, format persis:
+      {
+        "hooks": ["...", "...", "...", "...", "..."],
+         "visualBriefs": ["...", "...", "..."],
+        "angles": ["...", "...", "..."],
+        "angleHowTos": [
+          ["step 1", "step 2", "step 3"],
+          ["step 1", "step 2", "step 3"]
+        ],
+        "captions": ["...", "..."],
+        "ctas": ["...", "...", "...", "..."],
+        "hashtags": ["#...", "#...", "#...", "#...", "#...", "#...", "#...", "#...", "#...", "#..."]
+      }
+
+      Aturan angleHowTos:
+      - angleHowTos[i] HARUS sesuai dengan angles[i]
+      - Tulis langkah konkret, bukan teori
+      - Maksimal 3–5 langkah
+      - Bahasa Indonesia, gaya creator
+
+      Aturan:
+      - visualBriefs[i] HARUS cocok untuk hooks[i]
+      - Bahasa Indonesia natural.
+      - Hashtags harus relevan: gabungan brand/product + niche + discovery + platform.
+      - Struktur 3–5 baris bullet singkat, contoh:
+        "- 0–1s: ...\n- 1–2s: ...\n- 2–3s: ...\n- Overlay text: ...\n- Notes: ..."
+      - Hindari hashtag generik seperti #love #instagood.
+      - Maks 10 hashtag.
+      `.trim();
+
+          const textModel = getTextModel();
+          const result = await textModel.generateContent(prompt);
+          const response = await result.response;
+          const text = response.text();
+
+          const ideas = extractJson(text);
+          if (!ideas) {
+            return res.status(502).json({ error: "Failed to parse AI JSON output", raw: text });
+          }
+
+          return res.json(ideas);
+        } catch (err) {
+          console.error("Ideas mode error:", err);
+          return res.status(500).json({ error: err.message });
+        }
+      }
+
     const imagePart = req.file ? prepareImagePart(req.file.path) : null;
+      function extractJson(text = "") {
+      const start = text.indexOf("{");
+      const end = text.lastIndexOf("}");
+      if (start === -1 || end === -1 || end <= start) return null;
+      const slice = text.slice(start, end + 1);
+      try {
+        return JSON.parse(slice);
+      } catch {
+        return null;
+      }
+    }
 
     const platformSpecs = {
       "tiktok-reels": {

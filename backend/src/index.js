@@ -7,6 +7,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "./config/swagger.js";
 import imageRoutes from "./routes/imageRoutes.js";
 import { checkGeminiHealth } from "./config/gemini.js";
+import trendsRoutes from "./routes/trendsRoutes.js";
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.get("/health/gemini", async (req, res) => {
 });
 
 app.use("/api/image", imageRoutes);
+app.use("/api/trends", trendsRoutes);
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.get("/api", (req, res) => {
@@ -62,14 +64,17 @@ app.use((req, res) => {
   res.status(404).json({ error: "Endpoint not found" });
 });
 
-// For Vercel serverless functions, export the app
-export default app;
+// For Vercel serverless deployment, export the app
+// For local development, start the server directly
+const PORT = process.env.PORT || 4000;
 
-// For local development, start the server if this file is run directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const PORT = process.env.PORT || 4000;
+// When running on Vercel, the VERCEL environment variable is set
+// In local development, it's not set, so we start the server
+if (!process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`Backend running on http://localhost:${PORT}`);
     console.log(`API docs available at http://localhost:${PORT}/docs`);
   });
 }
+
+export default app;
