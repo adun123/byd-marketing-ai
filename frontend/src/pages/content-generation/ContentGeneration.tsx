@@ -9,10 +9,12 @@ import type { ContentGenTab } from "./SideNav";
 import { useState } from "react";
 
 
-type DummyOutput = {
+type GeneratedOutput = {
   id: string;
   prompt: string;
   createdAt: number;
+  imageUrl?: string;
+  base64?: string;
 };
 
 
@@ -38,23 +40,59 @@ const [guidance, setGuidance] = useState(7);
   const [attachments, setAttachments] = useState<any[]>([]);
 
 
-const [items, setItems] = useState<DummyOutput[]>([]);
- function handleGenerate({ prompt }: { prompt: string }) {
-  if (!prompt || prompt.trim().length < 2) return;
+const [items, setItems] = useState<GeneratedOutput[]>([]);
 
-  const newItem: DummyOutput = {
-    id: crypto.randomUUID(),
-    prompt,
-    createdAt: Date.now(),
-  };
+async function handleGenerate({ prompt }: { prompt: string }) {
+  if (!prompt || prompt.trim().length < 2) return;
 
   setIsGenerating(true);
 
-  // simulasi loading
-  setTimeout(() => {
-    setItems((prev) => [newItem, ...prev]);
+  try {
+    const response = await fetch('http://localhost:4000/api/image/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt,
+        style: visualStyle,
+        aspectRatio: aspect,
+        numberOfResults: 1,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.success && data.images && data.images.length > 0) {
+      // Add the generated images to items
+      const newItems: GeneratedOutput[] = data.images.map((image: any) => ({
+        id: crypto.randomUUID(),
+        prompt: data.prompt || prompt,
+        createdAt: Date.now(),
+        imageUrl: `http://localhost:4000${image.url}`,
+        base64: image.base64,
+      }));
+
+      setItems((prev) => [...newItems, ...prev]);
+    } else {
+      throw new Error(data.error || 'Failed to generate image');
+    }
+  } catch (error) {
+    console.error('Error generating image:', error);
+    // For now, add a dummy item with error message
+    const errorItem: GeneratedOutput = {
+      id: crypto.randomUUID(),
+      prompt: `${prompt} (Error: ${error instanceof Error ? error.message : 'Unknown error'})`,
+      createdAt: Date.now(),
+    };
+    setItems((prev) => [errorItem, ...prev]);
+  } finally {
     setIsGenerating(false);
-  }, 600);
+  }
 }
 
 
@@ -108,11 +146,27 @@ return (
                       key={it.id}
                       className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm"
                     >
-                      {/* Dummy image */}
-                      <div className="mb-2 aspect-video rounded-xl border border-slate-200 bg-slate-100 flex items-center justify-center">
-                        <span className="text-[11px] text-slate-400">
-                          Generated Image Preview
-                        </span>
+                      {/* Generated image */}
+                      <div className="mb-2 aspect-video rounded-xl border border-slate-200 bg-slate-100 overflow-hidden">
+                        {it.imageUrl ? (
+                          <img
+                            src={it.imageUrl}
+                            alt="Generated image"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : it.base64 ? (
+                          <img
+                            src={`data:image/png;base64,${it.base64}`}
+                            alt="Generated image"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center">
+                            <span className="text-[11px] text-slate-400">
+                              {it.prompt.includes('Error:') ? 'Failed to generate' : 'Generated Image Preview'}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Prompt text */}
@@ -150,8 +204,8 @@ return (
                   setModel={setModel}
                   isGenerating={isGenerating}
                   onGenerate={() => {
-                    // PoC: kirim semua option ini ke handleGenerate kalau mau
-                    handleGenerate({ prompt } as any);
+                    // Send all options to handleGenerate
+                    handleGenerate({ prompt });
                   }}
                 />
 
