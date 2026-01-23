@@ -1,4 +1,4 @@
-module.exports = function handler(req, res) {
+export default function handler(req, res) {
   res.status(200).json({
     name: "BYD Content Marketing AI API",
     version: "1.0.0",
@@ -17,7 +17,6 @@ module.exports = function handler(req, res) {
       "POST /api/image/upscale": "Upscale image resolution",
       "POST /api/image/chat": "Conversational image editing",
       "POST /api/image/marketing": "Generate marketing content"
-    },
-    note: "Endpoints currently return placeholder responses. Full backend integration pending."
+    }
   });
 }
