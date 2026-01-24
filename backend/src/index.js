@@ -67,8 +67,10 @@ app.use((req, res) => {
 // For local development, start the server if this file is run directly
 const PORT = process.env.PORT || 4000;
 
-// Kalau jalan di Vercel, env VERCEL biasanya ada.
-// Kalau local dev, VERCEL tidak ada → kita listen normal.
+
+
+// When running on Vercel, the VERCEL environment variable is set
+// In local development, it's not set, so we start the server
 if (!process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`Backend running on http://localhost:${PORT}`);
