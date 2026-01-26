@@ -14,3 +14,34 @@ export type ChannelItem = {
   key: ChannelKey;
   label: string;
 };
+
+export type GeneratedOutputKind =
+  | "text_to_image"
+  | "image_to_image"
+  | "upscale"
+  | "edit";
+
+export type GeneratedOutput = {
+  id: string;
+  prompt: string;
+  createdAt: number;
+  imageUrl?: string;
+  base64?: string;
+  kind?: GeneratedOutputKind;
+};
+
+export type VideoAttachment = {
+  id: string;
+  file: File;
+  preview: string;
+};
+
+export type VideoOutput = {
+  id: string;
+  prompt: string;
+  createdAt: number;
+  status?: "processing" | "done" | "failed";
+  videoUrl?: string;
+  posterUrl?: string;
+  error?: string;
+};
