@@ -2,29 +2,12 @@
 import { SlidersHorizontal, Image as ImageIcon, Layers, ArrowUpRight } from "lucide-react";
 
 export type Workflow = "text_to_image" | "image_to_image" | "upscale";
-
-export type Objective = "promotion" | "awareness" | "ads" | "ecommerce";
-
-export type Channel =
-  | "ig_feed"
-  | "ig_story"
-  | "tiktok"
-  | "yt_shorts"
-  | "linkedin"
-  | "web";
-
 export type VisualStyle = "clean" | "premium" | "lifestyle" | "ugc" | "bold";
 
 type Props = {
   workflow: Workflow;
-
-  objective: Objective;
-  channel: Channel;
   visualStyle: VisualStyle;
-
   aspect: "1:1" | "4:5" | "16:9" | "9:16";
-  guidance: number;
-
   onChange: (v: Partial<Props>) => void;
 };
 
@@ -32,50 +15,26 @@ function cn(...s: Array<string | undefined | false>) {
   return s.filter(Boolean).join(" ");
 }
 
-export default function OptionsPanel({
-  workflow,
-  objective,
-  channel,
-  visualStyle,
-  aspect,
-  guidance,
-  onChange,
-}: Props) {
+export default function OptionsPanel({ workflow, visualStyle, aspect, onChange }: Props) {
   const scenes = [
     {
       id: "text_to_image" as const,
-      title: "All Image",
-      desc: "Generate images from text. Best for marketing, design, and creative concepts.",
+      title: "Text to Image",
+      desc: "Generate images from text (endpoint: /api/image/generate).",
       icon: ImageIcon,
     },
     {
       id: "image_to_image" as const,
-      title: "Image to Image",
-      desc: "Transform an existing image (style conversion, edits, variations).",
+      title: "Edit Image",
+      desc: "Edit/transform image (endpoint: /api/image/edit).",
       icon: Layers,
     },
     {
       id: "upscale" as const,
-      title: "Upscale Image",
-      desc: "Increase resolution and clarity for better details and sharpness.",
+      title: "Upscale",
+      desc: "Increase resolution (endpoint: /api/image/upscale).",
       icon: ArrowUpRight,
     },
-  ];
-
-  const objectiveItems: Array<{ id: Objective; label: string }> = [
-    { id: "promotion", label: "Promotion" },
-    { id: "awareness", label: "Awareness" },
-    { id: "ads", label: "Ads" },
-    { id: "ecommerce", label: "E-commerce" },
-  ];
-
-  const channelItems: Array<{ id: Channel; label: string; hint?: string }> = [
-    { id: "ig_feed", label: "IG Feed", hint: "4:5 / 1:1" },
-    { id: "ig_story", label: "IG Story", hint: "9:16" },
-    { id: "tiktok", label: "TikTok", hint: "9:16" },
-    { id: "yt_shorts", label: "YT Shorts", hint: "9:16" },
-    { id: "linkedin", label: "LinkedIn", hint: "1:1" },
-    { id: "web", label: "Web", hint: "16:9" },
   ];
 
   const styleItems: Array<{ id: VisualStyle; label: string }> = [
@@ -86,11 +45,13 @@ export default function OptionsPanel({
     { id: "bold", label: "Bold" },
   ];
 
+  const showGenerateControls = workflow === "text_to_image";
+
   return (
-    <div className="w-full rounded-2xl border border-slate-200 bg-white p-3">
-      {/* Select Scene */}
+    <div className="w-full rounded-2xl border border-emerald-200/60 bg-white p-3 shadow-sm">
+      {/* Mode */}
       <div className="mb-5">
-        <div className="mb-2 text-xs font-semibold text-slate-700">Select Scene</div>
+        <div className="mb-2 text-xs font-semibold text-slate-700">Mode</div>
 
         <div className="space-y-2">
           {scenes.map((s) => {
@@ -126,144 +87,107 @@ export default function OptionsPanel({
                   <div className={cn("mt-0.5 text-[11px] leading-snug", active ? "text-white/80" : "text-slate-500")}>
                     {s.desc}
                   </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
-      {/* Objective */}
-      <div className="mb-4">
-        <div className="mb-2 text-xs font-semibold text-slate-700">Objective</div>
-        <div className="flex flex-wrap gap-2">
-          {objectiveItems.map((o) => {
-            const active = objective === o.id;
-            return (
-              <button
-                key={o.id}
-                type="button"
-                onClick={() => onChange({ objective: o.id })}
-                className={cn(
-                  "rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors",
-                  active
-                    ? "bg-slate-900 text-white"
-                    : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                )}
-              >
-                {o.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Channel / Placement */}
-      <div className="mb-4">
-        <div className="mb-2 text-xs font-semibold text-slate-700">Channel</div>
-        <div className="flex flex-wrap gap-2">
-          {channelItems.map((c) => {
-            const active = channel === c.id;
-            return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => onChange({ channel: c.id })}
-                className={cn(
-                  "rounded-xl px-2.5 py-1.5 text-left transition-colors",
-                  active
-                    ? "bg-slate-900 text-white"
-                    : "border border-slate-200 bg-white hover:bg-slate-50"
-                )}
-              >
-                <div className={cn("text-[11px] font-semibold", active ? "text-white" : "text-slate-800")}>
-                  {c.label}
-                </div>
-                {c.hint && (
-                  <div className={cn("text-[10px] leading-3", active ? "text-white/75" : "text-slate-500")}>
-                    {c.hint}
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Visual Style */}
-      <div className="mb-4">
-        <div className="mb-2 text-xs font-semibold text-slate-700">Visual Style</div>
-        <div className="flex flex-wrap gap-2">
-          {styleItems.map((s) => {
-            const active = visualStyle === s.id;
-            return (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => onChange({ visualStyle: s.id })}
-                className={cn(
-                  "rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors",
-                  active
-                    ? "bg-slate-900 text-white"
-                    : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                )}
-              >
-                {s.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Settings */}
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-        <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-700">
-          <SlidersHorizontal className="h-4 w-4" />
-          Settings
-        </div>
-
-        {/* Aspect */}
-        <div className="mb-3">
-          <div className="mb-1 text-[11px] font-semibold text-slate-700">Aspect</div>
-          <div className="flex flex-wrap gap-2">
-            {(["1:1", "4:5", "16:9", "9:16"] as const).map((a) => {
-              const active = aspect === a;
-              return (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => onChange({ aspect: a })}
-                  className={cn(
-                    "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors",
-                    active
-                      ? "bg-slate-900 text-white"
-                      : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  {/* UX hint per mode */}
+                  {!active ? null : s.id === "image_to_image" ? (
+                    <div className="mt-2 text-[11px] text-white/85">
+                      Butuh <span className="font-semibold">1 gambar</span> untuk diedit + prompt instruksi.
+                    </div>
+                  ) : s.id === "upscale" ? (
+                    <div className="mt-2 text-[11px] text-white/85">
+                      Butuh <span className="font-semibold">1 gambar</span> untuk di-upscale.
+                    </div>
+                  ) : (
+                    <div className="mt-2 text-[11px] text-white/85">
+                      Gunakan prompt + (opsional) style & aspect ratio.
+                    </div>
                   )}
-                >
-                  {a}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Guidance */}
-        <div>
-          <div className="mb-1 flex items-center justify-between text-[11px] font-semibold text-slate-700">
-            <span>Guidance</span>
-            <span className="text-slate-500">{guidance.toFixed(1)}</span>
-          </div>
-          <input
-            type="range"
-            min={1}
-            max={12}
-            step={0.5}
-            value={guidance}
-            onChange={(e) => onChange({ guidance: Number(e.target.value) })}
-            className="w-full"
-          />
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
+
+      {/* Controls khusus Text-to-Image */}
+      {showGenerateControls ? (
+        <>
+          {/* Visual Style */}
+          <div className="mb-4">
+            <div className="mb-2 text-xs font-semibold text-slate-700">Visual Style</div>
+            <div className="flex flex-wrap gap-2">
+              {styleItems.map((s) => {
+                const active = visualStyle === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => onChange({ visualStyle: s.id })}
+                    className={cn(
+                      "rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors",
+                      active
+                        ? "bg-gradient-to-br from-[#068773] to-[#0fb9a8] text-white"
+                        : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    )}
+                  >
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-2 text-[11px] text-slate-500">
+              (Backend: dikirim sebagai <span className="font-semibold text-slate-700">style</span>)
+            </div>
+          </div>
+
+          {/* Settings */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-700">
+              <SlidersHorizontal className="h-4 w-4" />
+              Settings
+            </div>
+
+            {/* Aspect */}
+            <div className="mb-1">
+              <div className="mb-1 text-[11px] font-semibold text-slate-700">Aspect</div>
+              <div className="flex flex-wrap gap-2">
+                {(["1:1", "4:5", "16:9", "9:16"] as const).map((a) => {
+                  const active = aspect === a;
+                  return (
+                    <button
+                      key={a}
+                      type="button"
+                      onClick={() => onChange({ aspect: a })}
+                      className={cn(
+                        "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors",
+                        active
+                          ? "bg-gradient-to-br from-[#068773] to-[#0fb9a8] text-white"
+                          : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                      )}
+                    >
+                      {a}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-2 text-[11px] text-slate-500">
+                (Backend: dikirim sebagai <span className="font-semibold text-slate-700">aspectRatio</span>)
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        // Info panel untuk mode non-generate supaya tidak misleading
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div className="text-xs font-semibold text-slate-700">Info</div>
+          <div className="mt-1 text-[11px] leading-snug text-slate-600">
+            {workflow === "image_to_image"
+              ? "Mode ini fokus edit gambar. Pengaturan style/aspect tidak ditampilkan karena tidak ada di parameter endpoint docs."
+              : "Mode ini fokus upscale gambar. Pengaturan style/aspect tidak ditampilkan karena tidak ada di parameter endpoint docs."}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
