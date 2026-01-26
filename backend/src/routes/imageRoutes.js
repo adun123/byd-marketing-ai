@@ -29,7 +29,9 @@ router.post("/combine", uploadMultiple, combineImages);
 router.post("/360-view", uploadSingle, generate360View);
 router.post("/upscale", uploadSingle, upscaleImageEndpoint);
 router.post("/chat", uploadSingle, imageChat);
-router.post("/marketing", uploadSingle, generateMarketingContent);
+// router.post("/marketing", uploadSingle, generateMarketingContent);
+router.post("/marketing", maybeUploadSingle, generateMarketingContent);
+
 router.get("/marketing/options", getMarketingOptions);
 
 export default router;

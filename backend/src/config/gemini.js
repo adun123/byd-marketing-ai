@@ -25,6 +25,11 @@ export const getVisionModel = () => {
     model: "gemini-2.5-flash-image",
   });
 };
+export const getTextModel = () => {
+  return genAI.getGenerativeModel({
+    model: isProd ? "gemini-2.5-flash" : "gemini-2.5-flash",
+  });
+};
 
 export const checkGeminiHealth = async () => {
   try {
