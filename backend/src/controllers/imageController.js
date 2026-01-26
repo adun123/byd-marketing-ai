@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { getImageModel, getTextModel } from "../config/gemini.js";
+import { getImageModel, getTextModel, getVisionModel } from "../config/gemini.js";
 import {
   prepareImagePart,
   saveBase64Image,
@@ -107,7 +107,7 @@ export const analyzeImage = async (req, res) => {
 
     const langInstruction = languageInstructions[lang] || languageInstructions.en;
 
-    const analyzePrompt = `Analyze this image and provide editing suggestions for marketing content creation.
+    const analyzePrompt = `Analyze this image and provide editing suggestions (max 3 suggestions) for marketing content creation.
 
 ${langInstruction}.
 
