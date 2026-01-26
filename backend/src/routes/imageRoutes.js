@@ -5,6 +5,7 @@ import {
   uploadWithMask,
 } from "../middleware/upload.js";
 import {
+  analyzeImage,
   textToImage,
   imageToImage,
   modifyElements,
@@ -19,6 +20,7 @@ import {
 
 const router = express.Router();
 
+router.post("/analyze", uploadSingle, analyzeImage);
 router.post("/generate", textToImage);
 router.post("/edit", uploadSingle, imageToImage);
 router.post("/elements", uploadSingle, modifyElements);

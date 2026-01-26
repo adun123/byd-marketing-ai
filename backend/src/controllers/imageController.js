@@ -8,6 +8,95 @@ import {
   getImageInfo,
 } from "../utils/imageUtils.js";
 
+export const analyzeImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "Image is required" });
+    }
+
+    const { language } = req.body;
+    const lang = language || "en";
+
+    const imagePart = prepareImagePart(req.file.path);
+
+    const languageInstructions = {
+      en: "Respond in English",
+      id: "Respond in Indonesian (Bahasa Indonesia)"
+    };
+
+    const langInstruction = languageInstructions[lang] || languageInstructions.en;
+
+    const analyzePrompt = `Analyze this image and provide editing suggestions for marketing content creation.
+
+${langInstruction}.
+
+Return a JSON object with this exact structure:
+{
+  "description": "Brief description of what's in the image",
+  "detected": {
+    "objects": ["list of main objects detected"],
+    "people": "description of people if any, or null",
+    "background": "description of the background",
+    "colors": ["dominant colors"],
+    "mood": "overall mood/atmosphere"
+  },
+  "suggestions": [
+    {
+      "action": "edit|add|remove|change",
+      "prompt": "Ready-to-use prompt for the user",
+      "description": "Why this suggestion might be useful"
+    }
+  ]
+}
+
+Provide 5-8 practical suggestions that would improve the image for marketing purposes. Include suggestions for:
+- Removing unwanted elements
+- Changing backgrounds
+- Adding branding elements
+- Improving composition
+- Style changes
+
+Only return valid JSON, no markdown or extra text.`;
+
+    const model = getVisionModel();
+    const result = await model.generateContent([analyzePrompt, imagePart]);
+    const response = await result.response;
+    const text = response.text();
+
+    let analysis;
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        analysis = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("No JSON found");
+      }
+    } catch (parseError) {
+      analysis = {
+        description: "Image analyzed",
+        detected: {},
+        suggestions: [
+          { action: "edit", prompt: "Enhance the colors and contrast", description: "Improve visual appeal" },
+          { action: "change", prompt: "Change the background to a studio setting", description: "Professional look" },
+          { action: "add", prompt: "Add a subtle logo watermark", description: "Brand recognition" },
+        ],
+        raw: text,
+      };
+    }
+
+    cleanupFiles([req.file]);
+
+    res.json({
+      success: true,
+      analysis,
+    });
+  } catch (error) {
+    console.error("Analyze Image Error:", error);
+    if (req.file) cleanupFiles([req.file]);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const textToImage = async (req, res) => {
   try {
     const { prompt, style, aspectRatio, brand, numberOfResults } = req.body;
