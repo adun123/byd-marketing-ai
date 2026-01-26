@@ -2,14 +2,9 @@
 import { Bookmark, CalendarPlus, Save } from "lucide-react";
 import OutputSectionCard from "./OutputSectionCard";
 import PinnedIdeasCard from "./PinnedIdeasCard";
-import type { PinnedItem, StudioBrief, StudioOutput } from "./types";
-
-function cn(...s: Array<string | undefined | false>) {
-  return s.filter(Boolean).join(" ");
-}
+import type { PinnedItem, StudioOutput } from "./types";
 
 export default function StudioWorkspace({
-  brief,
   output,
   isGenerating,
   pinned,
@@ -18,7 +13,6 @@ export default function StudioWorkspace({
   onSaveToLibrary,
   onAddToScheduler,
 }: {
-  brief: StudioBrief;
   output: StudioOutput | null;
   isGenerating: boolean;
   pinned: PinnedItem[];

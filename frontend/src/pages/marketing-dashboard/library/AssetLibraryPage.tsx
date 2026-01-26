@@ -52,8 +52,8 @@ export default function AssetLibraryPage() {
 
       <AssetGrid
         items={items}
-        onView={(id) => {}}
-        onEdit={(id) => {}}
+        onView={() => {}}
+        onEdit={() => {}}
       />
     </div>
   );

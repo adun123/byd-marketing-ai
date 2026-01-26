@@ -2,10 +2,6 @@
 import { BookmarkX, Pin, X } from "lucide-react";
 import type { PinnedItem } from "./types";
 
-function cn(...s: Array<string | undefined | false>) {
-  return s.filter(Boolean).join(" ");
-}
-
 export default function PinnedIdeasCard({
   pinned,
   onRemove,

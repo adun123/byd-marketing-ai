@@ -51,7 +51,6 @@ export default function CampaignStudioPage() {
       />
 
       <StudioWorkspace
-        brief={brief}
         output={output}
         isGenerating={isGenerating}
         pinned={pinned}
