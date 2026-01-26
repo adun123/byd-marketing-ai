@@ -77,7 +77,7 @@ async function handleGenerate({ prompt }: { prompt: string }) {
     if (workflow === "upscale") {
       // 🔥 AMBIL FILE DARI ATTACHMENTS
       const first = attachments[0];
-      const file: File = first.file; // ⬅️ INI KUNCI
+      const file: File = first.file; // ⬅INI KUNCI
 
       newItems = await upscaleImageService({
         API_BASE,

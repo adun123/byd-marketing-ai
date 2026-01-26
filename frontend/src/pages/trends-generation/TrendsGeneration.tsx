@@ -27,13 +27,13 @@ export default function TrendsGeneration() {
   const [snapshotLoading, setSnapshotLoading] = useState(false);
 
   const title = useMemo(() => "Trending Content (Brainstorm)", []);
-  const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:4000";
+  const API_BASE = (import.meta.env.VITE_API_BASE?.trim() || "/api") as string;
 
   // fetch snapshot (AI trend insights)
   async function fetchTrendInsights(signal?: AbortSignal) {
     setSnapshotLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/trends/insights`, {
+      const res = await fetch(`${API_BASE}/trends/insights`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal,
@@ -74,7 +74,7 @@ export default function TrendsGeneration() {
   async function onBrainstorm() {
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/image/marketing`, {
+      const res = await fetch(`${API_BASE}/image/marketing`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, mode: "ideas" }),
