@@ -5,6 +5,7 @@ import {
   uploadWithMask,
 } from "../middleware/upload.js";
 import {
+  enhancePrompt,
   analyzeImage,
   textToImage,
   imageToImage,
@@ -20,6 +21,15 @@ import {
 
 const router = express.Router();
 
+const maybeUploadSingle = (req, res, next) => {
+  const ct = req.headers["content-type"] || "";
+  if (ct.includes("multipart/form-data")) {
+    return uploadSingle(req, res, next);
+  }
+  return next();
+};
+
+router.post("/enhance-prompt", enhancePrompt);
 router.post("/analyze", uploadSingle, analyzeImage);
 router.post("/generate", textToImage);
 router.post("/edit", uploadSingle, imageToImage);
@@ -29,9 +39,7 @@ router.post("/combine", uploadMultiple, combineImages);
 router.post("/360-view", uploadSingle, generate360View);
 router.post("/upscale", uploadSingle, upscaleImageEndpoint);
 router.post("/chat", uploadSingle, imageChat);
-// router.post("/marketing", uploadSingle, generateMarketingContent);
 router.post("/marketing", maybeUploadSingle, generateMarketingContent);
-
 router.get("/marketing/options", getMarketingOptions);
 
 export default router;

@@ -8,6 +8,87 @@ import {
   getImageInfo,
 } from "../utils/imageUtils.js";
 
+export const enhancePrompt = async (req, res) => {
+  try {
+    const { prompt, style, purpose, language } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: "Prompt is required" });
+    }
+
+    const lang = language || "en";
+    const langInstructions = {
+      en: "Respond in English",
+      id: "Respond in Indonesian (Bahasa Indonesia)",
+    };
+    const langInstruction = langInstructions[lang] || langInstructions.en;
+
+    let enhanceRequest = `You are an expert prompt engineer for AI image generation. 
+Enhance this prompt into a detailed, effective prompt for generating marketing images.
+
+Original prompt: "${prompt}"`;
+
+    if (style) enhanceRequest += `\nDesired style: ${style}`;
+    if (purpose) enhanceRequest += `\nPurpose: ${purpose}`;
+
+    enhanceRequest += `
+
+${langInstruction}.
+
+Return a JSON object with this exact structure:
+{
+  "enhanced": "The enhanced detailed prompt ready to use",
+  "variations": [
+    "Alternative version 1",
+    "Alternative version 2"
+  ],
+  "tips": ["Max 3 tips for better results"]
+}
+
+Make the enhanced prompt:
+- More descriptive (lighting, composition, mood, colors)
+- Professional marketing quality
+- Specific about visual elements
+- Include style keywords (cinematic, professional, high quality, etc)
+
+Only return valid JSON, no markdown or extra text.`;
+
+    const model = getTextModel();
+    const result = await model.generateContent(enhanceRequest);
+    const response = await result.response;
+    const text = response.text();
+
+    let enhanced;
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        enhanced = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("No JSON found");
+      }
+    } catch (parseError) {
+      enhanced = {
+        enhanced: `Professional marketing image: ${prompt}. High quality, cinematic lighting, vibrant colors, modern aesthetic, suitable for advertising.`,
+        variations: [
+          `${prompt}, minimalist style, clean background, professional lighting`,
+          `${prompt}, dynamic composition, bold colors, eye-catching design`,
+          `${prompt}, elegant and sophisticated, premium feel, luxury aesthetic`,
+        ],
+        tips: ["Add specific colors", "Mention lighting style", "Include composition details"],
+      };
+    }
+
+    res.json({
+      success: true,
+      original: prompt,
+      ...enhanced,
+    });
+  } catch (error) {
+    console.error("Enhance Prompt Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const analyzeImage = async (req, res) => {
   try {
     if (!req.file) {
