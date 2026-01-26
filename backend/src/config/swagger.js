@@ -2,7 +2,7 @@ const swaggerDocument = {
   openapi: "3.0.0",
   info: {
     title: "BYD Content Marketing AI API",
-    version: "1.0.0",
+    version: "1.0.2",
     description: "API for generating marketing content using Gemini AI",
   },
   servers: [
@@ -12,12 +12,116 @@ const swaggerDocument = {
     },
   ],
   tags: [
+    { name: "Prompt", description: "Prompt enhancement tools" },
     { name: "Marketing", description: "Marketing content generation" },
+    { name: "Image Analysis", description: "Analyze images and get suggestions" },
     { name: "Image Generation", description: "Text to image generation" },
     { name: "Image Editing", description: "Edit and modify images" },
     { name: "Utility", description: "Upscale, combine, and other utilities" },
   ],
   paths: {
+    "/image/enhance-prompt": {
+      post: {
+        tags: ["Prompt"],
+        summary: "Enhance Prompt",
+        description: "Transform a short prompt into a detailed, effective prompt for image generation",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["prompt"],
+                properties: {
+                  prompt: { type: "string", description: "Your short prompt to enhance" },
+                  style: { type: "string", description: "Desired style (e.g. cinematic, minimalist, professional)" },
+                  purpose: { type: "string", description: "Purpose (e.g. instagram post, billboard, product catalog)" },
+                  language: { 
+                    type: "string", 
+                    enum: ["en", "id"],
+                    default: "en",
+                    description: "Response language" 
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Successfully enhanced prompt",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    original: { type: "string" },
+                    enhanced: { type: "string" },
+                    variations: { type: "array", items: { type: "string" } },
+                    tips: { type: "array", items: { type: "string" } },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: "Prompt required" },
+          500: { description: "Server error" },
+        },
+      },
+    },
+    "/image/analyze": {
+      post: {
+        tags: ["Image Analysis"],
+        summary: "Analyze Image & Get Suggestions",
+        description: "Upload an image to get AI-powered analysis and editing suggestions",
+        requestBody: {
+          required: true,
+          content: {
+            "multipart/form-data": {
+              schema: {
+                type: "object",
+                required: ["image"],
+                properties: {
+                  image: { type: "string", format: "binary", description: "Image to analyze" },
+                  language: { 
+                    type: "string", 
+                    enum: ["en", "id", "ar-EG", "de-DE", "es-MX", "fr-FR", "hi-IN", "it-IT", "ja-JP", "ko-KR", "pt-BR", "ru-RU", "ua-UA", "vi-VN", "zh-CN"],
+                    default: "en",
+                    description: "Response language" 
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Successfully analyzed image",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    analysis: {
+                      type: "object",
+                      properties: {
+                        description: { type: "string" },
+                        detected: { type: "object" },
+                        suggestions: { type: "array" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: "Image required" },
+          500: { description: "Server error" },
+        },
+      },
+    },
     "/image/marketing/options": {
       get: {
         tags: ["Marketing"],

@@ -4,6 +4,8 @@
 
 | I want to... | Use this endpoint |
 |--------------|-------------------|
+| Improve my short prompt | `/api/image/enhance-prompt` |
+| Get editing suggestions for my image | `/api/image/analyze` |
 | Create image from text description | `/api/image/generate` |
 | Edit an existing image | `/api/image/edit` |
 | Add or remove objects from image | `/api/image/elements` |
@@ -16,9 +18,122 @@
 
 ---
 
+<details>
+<summary><strong>Supported Languages</strong></summary>
+
+| Language | Code |
+|----------|------|
+| English | en |
+| Arabic – Egypt | ar-EG |
+| German – Germany | de-DE |
+| Spanish – Mexico | es-MX |
+| French – France | fr-FR |
+| Hindi – India | hi-IN |
+| Indonesian – Indonesia | id-ID |
+| Italian – Italy | it-IT |
+| Japanese – Japan | ja-JP |
+| Korean – Korea | ko-KR |
+| Portuguese – Brazil | pt-BR |
+| Russian – Russia | ru-RU |
+| Ukrainian – Ukraine | ua-UA |
+| Vietnamese – Vietnam | vi-VN |
+| Chinese – China | zh-CN |
+
+</details>
+
+---
+
 ## Detailed Guide
 
-### 1. Text to Image (`/api/image/generate`)
+### 1. Enhance Prompt (`/api/image/enhance-prompt`)
+
+**Use when:** You have a short/simple prompt and want AI to make it more detailed and effective.
+
+**What you need:**
+- `prompt` - Your short prompt (required)
+- `style` - Desired style like "cinematic", "minimalist", "professional" (optional)
+- `purpose` - Purpose like "instagram post", "billboard", "product catalog" (optional)
+- `language` - Response language code (optional, default: en)
+
+**Example:**
+```json
+{
+  "prompt": "BYD car",
+  "style": "cinematic",
+  "purpose": "instagram post"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "original": "BYD car",
+  "enhanced": "Professional marketing shot of a sleek BYD electric vehicle, cinematic lighting with golden hour sun rays, dynamic low angle composition, reflective metallic surface, modern urban backdrop with subtle bokeh, high-end automotive photography style",
+  "variations": [
+    "BYD electric car in minimalist white studio, soft diffused lighting, clean reflections",
+    "Dynamic BYD vehicle in motion on coastal highway, dramatic sunset sky",
+    "Elegant BYD sedan parked at luxury venue, night scene with ambient city lights"
+  ],
+  "tips": [
+    "Specify car model for more accurate results",
+    "Add color preference for the vehicle"
+  ]
+}
+```
+
+Copy the `enhanced` prompt or pick from `variations` and use it in `/generate`!
+
+---
+
+### 2. Analyze Image & Get Suggestions (`/api/image/analyze`)
+
+**Use when:** You uploaded an image but don't know what to do with it. Get AI-powered suggestions!
+
+**What you need:**
+- `image` - Upload your image (required)
+- `language` - Response language code from supported languages above (optional, default: en)
+
+**Example:**
+```
+image: [upload car.jpg]
+language: id
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "analysis": {
+    "description": "A black sedan car on a city street",
+    "detected": {
+      "objects": ["car", "building", "road"],
+      "people": "1 person in driver seat",
+      "background": "City street with tall buildings",
+      "colors": ["black", "gray", "blue sky"],
+      "mood": "Urban, modern"
+    },
+    "suggestions": [
+      {
+        "action": "remove",
+        "prompt": "Remove the person inside the car",
+        "description": "For cleaner product photo"
+      },
+      {
+        "action": "change",
+        "prompt": "Change background to beach sunset",
+        "description": "More attractive for marketing"
+      }
+    ]
+  }
+}
+```
+
+You can copy the `prompt` from suggestions and use it directly in `/edit` or `/elements` endpoint!
+
+---
+
+### 3. Text to Image (`/api/image/generate`)
 
 **Use when:** You want to create a new image from scratch using text description.
 
@@ -38,7 +153,7 @@ numberOfResults: 3
 
 ---
 
-### 2. Edit Image (`/api/image/edit`)
+### 4. Edit Image (`/api/image/edit`)
 
 **Use when:** You have an image and want to modify it based on instructions.
 
@@ -56,7 +171,7 @@ preserveStyle: true
 
 ---
 
-### 3. Add/Remove Elements (`/api/image/elements`)
+### 5. Add/Remove Elements (`/api/image/elements`)
 
 **Use when:** You want to add something new or remove something from an image.
 
@@ -83,7 +198,7 @@ element: "person in background"
 
 ---
 
-### 4. Mask Edit (`/api/image/mask-edit`)
+### 6. Mask Edit (`/api/image/mask-edit`)
 
 **Use when:** You want to edit only a specific part of an image.
 
@@ -102,7 +217,7 @@ maskDescription: "the sky"
 
 ---
 
-### 5. Combine Images (`/api/image/combine`)
+### 7. Combine Images (`/api/image/combine`)
 
 **Use when:** You want to merge 2-5 images into one cohesive image.
 
@@ -121,7 +236,7 @@ layout: "side by side"
 
 ---
 
-### 6. 360 View (`/api/image/360-view`)
+### 8. 360 View (`/api/image/360-view`)
 
 **Use when:** You want multiple angle views of a product or character.
 
@@ -140,7 +255,7 @@ angles: "front, rear, side, interior"
 
 ---
 
-### 7. Upscale Image (`/api/image/upscale`)
+### 9. Upscale Image (`/api/image/upscale`)
 
 **Use when:** You want to increase image resolution/quality.
 
@@ -165,7 +280,7 @@ quality: 95
 
 ---
 
-### 8. Image Chat (`/api/image/chat`)
+### 10. Image Chat (`/api/image/chat`)
 
 **Use when:** You want to have a conversation about editing an image, step by step.
 
@@ -182,7 +297,7 @@ image: [upload photo.jpg]
 
 ---
 
-### 9. Marketing Content (`/api/image/marketing`)
+### 11. Marketing Content (`/api/image/marketing`)
 
 **Use when:** You want to create social media ready content with proper dimensions.
 
