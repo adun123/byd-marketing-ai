@@ -1,6 +1,6 @@
 // src/pages/marketing-dashboard/scheduler/PlatformFilterCard.tsx
 import type { PlatformKey } from "./types";
-import { Facebook, Instagram, Music2, Youtube, Twitter, Mail } from "lucide-react";
+import { Facebook, Instagram, Music2, Youtube, Twitter } from "lucide-react";
 import { cn } from "./date";
 
 const ITEMS: Array<{
@@ -14,7 +14,6 @@ const ITEMS: Array<{
   { key: "tiktok", label: "TikTok", icon: Music2 },
   { key: "youtube", label: "YouTube", icon: Youtube },
   { key: "twitter", label: "X", icon: Twitter },
-  { key: "omnisernd", label: "Omnisend", icon: Mail },
 ];
 
 export default function PlatformFilterCard({

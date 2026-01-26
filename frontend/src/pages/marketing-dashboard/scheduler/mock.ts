@@ -7,7 +7,6 @@ export const BEST_TIMES: BestTimeRow[] = [
   { platform: "tiktok", day: "Thu", at: "18:00" },
   { platform: "youtube", day: "Sat", at: "15:00" },
   { platform: "twitter", day: "Wed", at: "09:00" },
-  { platform: "omnisernd", day: "Tue", at: "10:00" },
 ];
 
 export const POSTS: ScheduledPost[] = [
