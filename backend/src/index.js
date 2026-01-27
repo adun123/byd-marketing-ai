@@ -2,12 +2,15 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
+import fs from "fs"; // Tambahkan fs untuk memastikan folder ada
 import { fileURLToPath } from "url";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "./config/swagger.js";
 import imageRoutes from "./routes/imageRoutes.js";
 import { checkGeminiHealth } from "./config/gemini.js";
-import trendsRoutes from "./routes/trendsRoutes.js";
+import trendRoutes from "./routes/trendsRoutes.js";
+import videoRoutes from "./routes/videoRoutes.js";
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -16,11 +19,28 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 app.use(cors());
+// Limit besar diperlukan jika ada upload image base64, 
+// tapi video kita pakai URL jadi aman. Tetap set 50mb untuk aman.
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
+// --- STATIC FILES CONFIGURATION ---
+
+// 1. Serve folder 'outputs' (Existing)
 app.use("/outputs", express.static(path.join(__dirname, "../outputs")));
+
+// 2. Serve folder 'uploads' (Existing)
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+// 3. [BARU] Serve folder 'public/videos' 
+// Ini WAJIB agar URL video '/videos/...' dari controller bisa dibuka browser
+const videoDir = path.join(process.cwd(), "public/videos");
+if (!fs.existsSync(videoDir)) {
+  fs.mkdirSync(videoDir, { recursive: true });
+}
+app.use("/videos", express.static(videoDir));
+
+// ----------------------------------
 
 app.get("/health", (req, res) => res.json({ ok: true, timestamp: new Date().toISOString() }));
 
@@ -29,24 +49,42 @@ app.get("/health/gemini", async (req, res) => {
   res.status(health.status === "ok" ? 200 : 503).json(health);
 });
 
+
 app.use("/api/image", imageRoutes);
-app.use("/api/trends", trendsRoutes);
+app.use("/api/trends", trendRoutes);
+app.use("/api/video", videoRoutes); 
+
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.get("/api", (req, res) => {
   res.json({
     name: "BYD Content Marketing AI API",
-    version: "1.0.0",
+    version: "1.0.3",
     endpoints: {
-      "POST /api/image/generate": "Generate image from text prompt",
-      "POST /api/image/edit": "Edit image based on instructions",
-      "POST /api/image/elements": "Add/remove elements from image",
-      "POST /api/image/mask-edit": "Edit specific area with mask",
-      "POST /api/image/combine": "Combine multiple images",
-      "POST /api/image/360-view": "Generate 360 view / multiple angles",
-      "POST /api/image/upscale": "Upscale image resolution",
-      "POST /api/image/chat": "Conversational image editing",
-      "POST /api/image/marketing": "Generate marketing content",
+      image: {
+        "POST /api/image/generate": "Generate image from text prompt",
+        "POST /api/image/edit": "Edit image based on instructions",
+        "POST /api/image/elements": "Add/remove elements from image",
+        "POST /api/image/mask-edit": "Edit specific area with mask",
+        "POST /api/image/combine": "Combine multiple images",
+        "POST /api/image/360-view": "Generate 360 view / multiple angles",
+        "POST /api/image/upscale": "Upscale image resolution",
+        "POST /api/image/chat": "Conversational image editing",
+        "POST /api/image/marketing": "Generate marketing content",
+        "POST /api/image/analyze": "Analyze image and get suggestions",
+        "POST /api/image/enhance-prompt": "Enhance prompt with AI",
+      },
+      trends: {
+        "POST /api/trends/search": "Search real-time viral trends",
+        "POST /api/trends/generate-content": "Generate content from trend",
+        "POST /api/trends/regenerate-headlines": "Regenerate headlines",
+        "POST /api/trends/polish": "Polish and improve content",
+        "GET /api/trends/options": "Get available options",
+      },
+      video: {
+        "POST /api/video/enhance-prompt": "Enhance video prompt for Veo",
+        "POST /api/video/generate": "Generate video using Google Veo (MP4)",
+      }
     },
   });
 });
@@ -63,20 +101,14 @@ app.use((req, res) => {
   res.status(404).json({ error: "Endpoint not found" });
 });
 
-// For Vercel serverless functions, export the app
-// For local development, start the server if this file is run directly
 const PORT = process.env.PORT || 4000;
 
-
-
-// When running on Vercel, the VERCEL environment variable is set
-// In local development, it's not set, so we start the server
 if (!process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`Backend running on http://localhost:${PORT}`);
     console.log(`API docs available at http://localhost:${PORT}/docs`);
+    console.log(`Video storage ready at http://localhost:${PORT}/videos/`);
   });
 }
 
 export default app;
-
