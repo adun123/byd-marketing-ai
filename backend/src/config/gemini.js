@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { VertexAI } from "@google-cloud/vertexai";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -6,6 +7,11 @@ dotenv.config();
 if (!process.env.GEMINI_API_KEY) {
   console.error("GEMINI_API_KEY is not set in environment variables");
 }
+
+const vertexAI = new VertexAI({
+  project: process.env.GCP_PROJECT_ID,
+  location: process.env.GCP_LOCATION || "us-central1", 
+});
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -25,9 +31,23 @@ export const getVisionModel = () => {
     model: "gemini-2.5-flash-image",
   });
 };
+
+export const getVideoModel = () => {
+  return vertexAI.preview.getGenerativeModel({
+    model: "veo-3.1-generate-preview",
+  });
+};
+
 export const getTextModel = () => {
   return genAI.getGenerativeModel({
-    model: isProd ? "gemini-2.5-flash" : "gemini-2.5-flash",
+    model: "gemini-2.5-flash",
+  });
+};
+
+export const getGroundedModel = () => {
+  return genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    tools: [{ googleSearch: {} }],
   });
 };
 

@@ -6,6 +6,48 @@
 |--------------|-------------------|
 | Improve my short prompt | `/api/image/enhance-prompt` |
 | Get editing suggestions for my image | `/api/image/analyze` |
+| **Discover viral trends** | `/api/trends/search` |
+| **Generate content from trend** | `/api/trends/generate-content` |
+| **Generate improved video prompt** | `/api/trends/generate-video` |
+---
+
+### Generate Video Prompt (`/api/trends/generate-video`)
+
+**Use when:** Anda ingin mengubah prompt video dari AI menjadi lebih sinematik, kreatif, atau menambah dialog/efek suara, serta mengatur orientasi landscape/portrait.
+
+**Request (JSON):**
+```json
+{
+  "basePrompt": "Dynamic tracking shot of BYD Atto 3 driving through city at night, neon reflections, cinematic lighting",
+  "style": ["dialog", "cinematic", "creative"],
+  "aspectRatio": "16:9",
+  "duration": "20 seconds",
+  "orientation": "landscape"
+}
+```
+
+**Style options:**
+- `dialog`: Tambahkan dialog natural & efek suara
+- `cinematic`: Realisme sinematik (lighting, grading, camera movement)
+- `creative`: Animasi kreatif, transisi, efek visual
+
+**Orientation:**
+- `landscape` (horizontal) atau `portrait` (vertical)
+
+**Response:**
+```json
+{
+  "success": true,
+  "improvedPrompt": "Dynamic tracking shot of BYD Atto 3 driving through a neon-lit city at night. Include natural dialog between driver and passenger about the car's features, subtle city sound effects, cinematic lighting, smooth camera pans, creative animated transitions between scenes. Format for landscape orientation. Duration: 20 seconds. Aspect Ratio: 16:9.",
+  "basePrompt": "Dynamic tracking shot of BYD Atto 3 driving through city at night, neon reflections, cinematic lighting",
+  "style": ["dialog", "cinematic", "creative"],
+  "aspectRatio": "16:9",
+  "duration": "20 seconds",
+  "orientation": "landscape"
+}
+```
+
+Prompt sudah otomatis di-improve sesuai [Gemini Video API Prompt Guide](https://ai.google.dev/gemini-api/docs/video?hl=id&example=style#prompt-guide).
 | Create image from text description | `/api/image/generate` |
 | Edit an existing image | `/api/image/edit` |
 | Add or remove objects from image | `/api/image/elements` |
@@ -335,6 +377,177 @@ message: "The future of electric mobility"
 **Endpoint:** `GET /api/image/marketing/options`
 
 Returns all available platforms, content types, and target audiences for the marketing endpoint.
+
+---
+
+## Viral Trends Discovery
+
+### Search Trends (`/api/trends/search`)
+
+**Use when:** You want to discover real-time viral trends and topics for your marketing content.
+
+**Request (JSON):**
+```json
+{
+  "query": "BYD electric cars Indonesia",
+  "platform": "instagram",
+  "topic": "automotive",
+  "language": "en"
+}
+```
+
+**Parameters:**
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| query | Yes | Search query for trends |
+| platform | No | Filter by: instagram, tiktok, youtube, linkedin, twitter |
+| topic | No | Filter by: general, automotive, ev, technology, lifestyle |
+| language | No | en (default) or id |
+
+**Response:**
+```json
+{
+  "success": true,
+  "query": "BYD electric cars Indonesia",
+  "trends": [
+    {
+      "topic": "BYD Atto 3 Dominates Indonesia EV Market",
+      "keyTopic": "BYDAtto3",
+      "scale": 0.85,
+      "sentiment": {
+        "positive": 72,
+        "negative": 28,
+        "label": "positive"
+      },
+      "sources": [
+        {
+          "title": "Article title",
+          "url": "https://example.com",
+          "platform": "news"
+        }
+      ],
+      "description": "BYD Atto 3 becomes best-selling EV in Indonesia...",
+      "category": "automotive",
+      "engagement": {
+        "estimated": "high",
+        "reason": "Strong social media discussions"
+      }
+    }
+  ],
+  "summary": "Overall trend summary",
+  "grounding": {
+    "searchQueries": ["queries used"],
+    "sources": [{"title": "...", "uri": "..."}]
+  }
+}
+```
+
+---
+
+### Generate Content from Trend (`/api/trends/generate-content`)
+
+**Use when:** You've selected a trending topic and want to generate headlines, storyline, and visual prompts.
+
+**Request (JSON):**
+```json
+{
+  "topic": "BYD Atto 3 Dominates Indonesia EV Market",
+  "keyTopic": "BYDAtto3",
+  "targetAudience": "Gen Z, Car Enthusiasts",
+  "toneOfVoice": "Professional & Authoritative",
+  "targetKeywords": "BYD, EV, electric car",
+  "slideCount": 5,
+  "language": "en"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "headlines": [
+    {
+      "text": "Why Gen Z is Choosing BYD Atto 3 Over Tesla",
+      "type": "high-clickrate",
+      "hook": "Creates curiosity with comparison"
+    }
+  ],
+  "storyline": {
+    "slides": [
+      {
+        "slideNumber": 1,
+        "title": "HOOK",
+        "content": "Open with a striking question...",
+        "duration": "3-5 seconds",
+        "visualCue": "Close-up of BYD Atto 3 front grille"
+      }
+    ]
+  },
+  "visualDescription": {
+    "photo": {
+      "prompt": "Professional automotive photography, BYD Atto 3 in urban Jakarta setting...",
+      "style": "cinematic",
+      "aspectRatio": "4:5"
+    },
+    "video": {
+      "prompt": "Dynamic tracking shot of BYD Atto 3 driving through city...",
+      "style": "dynamic",
+      "duration": "15-30 seconds",
+      "aspectRatio": "9:16"
+    }
+  },
+  "hashtags": ["#BYD", "#BYDAtto3", "#ElectricVehicle"],
+  "callToAction": "Book your test drive today!",
+  "bestPostingTime": "6-8 PM local time"
+}
+```
+
+---
+
+### Regenerate Headlines (`/api/trends/regenerate-headlines`)
+
+**Use when:** You want different headline options for the same topic.
+
+**Request (JSON):**
+```json
+{
+  "topic": "BYD Atto 3 Indonesia",
+  "currentHeadlines": ["Previous headline 1", "Previous headline 2"],
+  "style": "question",
+  "language": "en"
+}
+```
+
+---
+
+### Polish Content (`/api/trends/polish`)
+
+**Use when:** You have content that needs improvement.
+
+**Request (JSON):**
+```json
+{
+  "content": "BYD car is good for environment",
+  "instruction": "Make it more engaging and professional",
+  "language": "en"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "original": "BYD car is good for environment",
+  "polished": "Drive the change you want to see. BYD vehicles deliver zero-emission performance without compromising on style or power.",
+  "changes": ["Added emotional hook", "More specific benefits", "Professional tone"]
+}
+```
+
+---
+
+### Get Trend Options (`GET /api/trends/options`)
+
+Returns all available options for trend searches and content generation.
 
 ---
 
