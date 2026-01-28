@@ -8,6 +8,7 @@ node_modules/
 uploads/*
 !uploads/.gitkeep
 
+videos/*
 outputs/*
 !outputs/.gitkeep
 
@@ -18,3 +19,6 @@ npm-debug.log*
 # OS files
 .DS_Store
 Thumbs.db
+
+# GCP
+service-account-key.json

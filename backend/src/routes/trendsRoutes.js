@@ -1,4 +1,3 @@
-// backend/src/routes/trendsRoutes.js
 import express from "express";
 import { getTrendInsights } from "../controllers/trendsController.js";
 import { getViralSnippets } from "../controllers/viralSnippetsController.js";

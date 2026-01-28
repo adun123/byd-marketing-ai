@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { getImageModel, getTextModel } from "../config/gemini.js";
+import { getImageModel, getTextModel, getVisionModel } from "../config/gemini.js";
 import {
   prepareImagePart,
   saveBase64Image,
@@ -8,7 +8,175 @@ import {
   getImageInfo,
 } from "../utils/imageUtils.js";
 
+export const enhancePrompt = async (req, res) => {
+  try {
+    const { prompt, style, purpose, language } = req.body;
 
+    if (!prompt) {
+      return res.status(400).json({ error: "Prompt is required" });
+    }
+
+    const lang = language || "en";
+    const langInstructions = {
+      en: "Respond in English",
+      id: "Respond in Indonesian (Bahasa Indonesia)",
+    };
+    const langInstruction = langInstructions[lang] || langInstructions.en;
+
+    let enhanceRequest = `You are an expert prompt engineer for AI image generation. 
+Enhance this prompt into a detailed, effective prompt for generating marketing images.
+
+Original prompt: "${prompt}"`;
+
+    if (style) enhanceRequest += `\nDesired style: ${style}`;
+    if (purpose) enhanceRequest += `\nPurpose: ${purpose}`;
+
+    enhanceRequest += `
+
+${langInstruction}.
+
+Return a JSON object with this exact structure:
+{
+  "enhanced": "The enhanced detailed prompt ready to use",
+  "variations": [
+    "Alternative version 1",
+    "Alternative version 2"
+  ],
+  "tips": ["Max 3 tips for better results"]
+}
+
+Make the enhanced prompt:
+- More descriptive (lighting, composition, mood, colors)
+- Professional marketing quality
+- Specific about visual elements
+- Include style keywords (cinematic, professional, high quality, etc)
+
+Only return valid JSON, no markdown or extra text.`;
+
+    const model = getTextModel();
+    const result = await model.generateContent(enhanceRequest);
+    const response = await result.response;
+    const text = response.text();
+
+    let enhanced;
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        enhanced = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("No JSON found");
+      }
+    } catch (parseError) {
+      enhanced = {
+        enhanced: `Professional marketing image: ${prompt}. High quality, cinematic lighting, vibrant colors, modern aesthetic, suitable for advertising.`,
+        variations: [
+          `${prompt}, minimalist style, clean background, professional lighting`,
+          `${prompt}, dynamic composition, bold colors, eye-catching design`,
+          `${prompt}, elegant and sophisticated, premium feel, luxury aesthetic`,
+        ],
+        tips: ["Add specific colors", "Mention lighting style", "Include composition details"],
+      };
+    }
+
+    res.json({
+      success: true,
+      original: prompt,
+      ...enhanced,
+    });
+  } catch (error) {
+    console.error("Enhance Prompt Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const analyzeImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "Image is required" });
+    }
+
+    const { language } = req.body;
+    const lang = language || "en";
+
+    const imagePart = prepareImagePart(req.file.path);
+
+    const languageInstructions = {
+      en: "Respond in English",
+      id: "Respond in Indonesian (Bahasa Indonesia)"
+    };
+
+    const langInstruction = languageInstructions[lang] || languageInstructions.en;
+
+    const analyzePrompt = `Analyze this image and provide editing suggestions (max 3 suggestions) for marketing content creation.
+
+${langInstruction}.
+
+Return a JSON object with this exact structure:
+{
+  "description": "Brief description of what's in the image",
+  "detected": {
+    "objects": ["list of main objects detected"],
+    "people": "description of people if any, or null",
+    "background": "description of the background",
+    "colors": ["dominant colors"],
+    "mood": "overall mood/atmosphere"
+  },
+  "suggestions": [
+    {
+      "action": "edit|add|remove|change",
+      "prompt": "Ready-to-use prompt for the user",
+      "description": "Why this suggestion might be useful"
+    }
+  ]
+}
+
+Provide 5-8 practical suggestions that would improve the image for marketing purposes. Include suggestions for:
+- Removing unwanted elements
+- Changing backgrounds
+- Adding branding elements
+- Improving composition
+- Style changes
+
+Only return valid JSON, no markdown or extra text.`;
+
+    const model = getVisionModel();
+    const result = await model.generateContent([analyzePrompt, imagePart]);
+    const response = await result.response;
+    const text = response.text();
+
+    let analysis;
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        analysis = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("No JSON found");
+      }
+    } catch (parseError) {
+      analysis = {
+        description: "Image analyzed",
+        detected: {},
+        suggestions: [
+          { action: "edit", prompt: "Enhance the colors and contrast", description: "Improve visual appeal" },
+          { action: "change", prompt: "Change the background to a studio setting", description: "Professional look" },
+          { action: "add", prompt: "Add a subtle logo watermark", description: "Brand recognition" },
+        ],
+        raw: text,
+      };
+    }
+
+    cleanupFiles([req.file]);
+
+    res.json({
+      success: true,
+      analysis,
+    });
+  } catch (error) {
+    console.error("Analyze Image Error:", error);
+    if (req.file) cleanupFiles([req.file]);
+    res.status(500).json({ error: error.message });
+  }
+};
 
 export const textToImage = async (req, res) => {
   try {
