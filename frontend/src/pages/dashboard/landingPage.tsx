@@ -1,8 +1,9 @@
 import TopBar from "../../components/layout/TopBar";
 import AgentCardItem from "./components/ui/AgentCardItem";
-import StatPill from "./components/ui/StatPill";
+  
 import { dashboardCards as cards } from "./data/dashboardCards";
 import cn from "./components/ui/cn";
+import StatFeature from "./components/ui/StatFeature";
 
 
 
@@ -13,7 +14,7 @@ export default function Dashboard(){
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <TopBar />
 
-      <main className="relative w-full overflow-hidden px-6 py-10 sm:py-14 lg:px-10">
+      <main className="relative w-full overflow-hidden px-6 py-10 sm:py-9 lg:px-10">
         {/* Corporate background: grid + soft gradients (antigravity) */}
         <div className="pointer-events-none absolute inset-0">
           {/* grid */}
@@ -39,29 +40,29 @@ export default function Dashboard(){
           {/* Hero */}
           <div className="flex flex-col gap-7 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 bg-white/70 px-3 py-1.5 text-[12px] font-semibold text-slate-700 backdrop-blur">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
-              BYD • Internal Content Enablement
-            </div>
+              {/* Eyebrow pill */}
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-600/15 bg-emerald-600/10 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-800">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600/15 text-emerald-700">
+                  ✦
+                </span>
+                Unified Content Engine
+              </div>
 
-            <h1 className="mt-4 text-[28px] font-semibold leading-[1.12] tracking-[-0.03em] text-slate-900 sm:text-[40px]">
-              Workspace internal untuk{" "}
-              <span className="text-emerald-700">standarisasi</span>,{" "}
-              <span className="text-slate-900">percepatan</span>, dan{" "}
-              <span className="text-slate-900">kontrol kualitas</span> konten.
-            </h1>
+              {/* Headline */}
+              <h1 className="mt-5 text-[44px] font-extrabold leading-[0.95] tracking-[-0.04em] text-slate-900 sm:text-[64px]">
+                <span className="block">Scale. Speed.</span>
+                <span className="mt-2 block font-extrabold italic text-emerald-700">
+                  Precision.
+                </span>
+              </h1>
 
-            <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
-              Satu tempat untuk discovery tren, benchmarking kompetitor, generasi konten, dan
-              adaptasi multi-channel dengan output yang konsisten terhadap guideline brand.
-            </p>
+              {/* Subcopy */}
+              <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
+                A central intelligence hub for trend discovery, content generation, and performance
+                monitoring.
+              </p>
 
-            <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <StatPill label="Environment" value="Internal" hint="Akses terbatas tim" />
-              <StatPill label="Workflow" value="Insight → Draft" hint="Lebih cepat & rapi" />
-              <StatPill label="Standards" value="Brand-aligned" hint="Guideline & tone" />
-            </div>
-
+              
 
               {/* CTAs */}
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -80,7 +81,6 @@ export default function Dashboard(){
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-white/80 transition group-hover:translate-x-0.5" />
                 </a>
 
-
                 <a
                   href="/generator"
                   className={cn(
@@ -91,72 +91,86 @@ export default function Dashboard(){
                 >
                   Go to Generator
                 </a>
-
-                <a
-                  href="/competitors"
-                  className="text-sm font-semibold text-slate-700 underline decoration-slate-300 underline-offset-4 hover:text-slate-900"
-                >
-                  Benchmark competitors
-                </a>
               </div>
 
+              {/* Stats */}
               
+              <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
+                <StatFeature icon="trend" title="Trendy" subtitle="Discovery what virals" />
+                <StatFeature icon="workflow" title="Workflow" subtitle="Insight to content" />
+                <StatFeature icon="standards" title="Standards" subtitle="Brand aligned DNA" />
+              </div>
+
             </div>
 
-            {/* Right panel: executive preview */}
+
+            {/* Right panel: marketing hook snapshot */}
             <div className="hidden lg:block">
               <div className="relative w-[22rem]">
+                {/* ambient glow */}
                 <div className="absolute -inset-10 rounded-full bg-emerald-500/10 blur-3xl" />
 
-                <div className="relative rounded-3xl border border-slate-200/70 bg-white/80 p-5 shadow-[0_14px_40px_-26px_rgba(15,23,42,0.45)] backdrop-blur">
+                <div className="relative rounded-[28px] border border-slate-200/70 bg-white/90 p-5 shadow-[0_18px_48px_-28px_rgba(15,23,42,0.45)] backdrop-blur">
+                  {/* Header */}
                   <div className="flex items-center justify-between">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                      Executive Snapshot
+                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600/10 text-emerald-600">
+                        ✨
+                      </span>
+                      Marketing Hook
                     </div>
-                    <span className="inline-flex items-center rounded-full border border-emerald-600/15 bg-emerald-600/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
-                      Active
+
+                    <span className="inline-flex items-center rounded-full border border-emerald-600/15 bg-emerald-600/10 px-2.5 py-0.5 text-[9px] font-bold text-emerald-700">
+                      ACTIVE SNAPSHOT
                     </span>
                   </div>
 
+                  {/* Content */}
                   <div className="mt-4 space-y-3">
+                    {/* Trend Hook */}
                     <div className="rounded-2xl border border-slate-200/70 bg-white p-4">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
-                        Trend Hook
+                      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                        ● Trend Hook
                       </div>
+
                       <div className="mt-2 text-sm font-semibold italic text-slate-800">
-                        “Kenapa brand kecil bisa viral tanpa ads?”
+                        “Why small brands go viral without spending on ads?”
                       </div>
-                      <div className="mt-2 text-[12px] text-slate-500">
-                        Angle: proof-based • CTA: comment keyword
+
+                      <div className="mt-2 flex items-center gap-3 text-[11px] text-slate-500">
+                        <span className="h-1 w-1 rounded-full bg-gradient-to-r from-[#068773] to-[#0fb9a8]" />
+                        <span>Proof-based</span>
+                        <span className="h-1 w-1 rounded-full bg-gradient-to-r from-[#068773] to-[#0fb9a8]" />
+                        <span>12.4k Engagement</span>
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border border-slate-200/70 bg-white p-4">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
-                        Visual Brief
+                    {/* Visual Strategy */}
+                    <div className="rounded-2xl border border-emerald-200/60 bg-emerald-50/50 p-4">
+                      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                        👁 Visual Strategy
                       </div>
-                      <p className="mt-2 text-[12px] leading-relaxed text-slate-600">
-                        Split screen: problem vs solution. Close-up ekspresi creator,
-                        text overlay 3–5 kata. Pace cepat, cut tiap 1–2 detik.
+
+                      <p className="mt-2 text-[12px] leading-relaxed text-slate-700">
+                        Split screen: contrast problem vs solution.  
+                        Use high-speed cuts with overlaying kinetic typography.
                       </p>
                     </div>
-
-                    <div className="rounded-2xl border border-slate-200/70 bg-white p-4">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
-                        Output
-                      </div>
-                      <div className="mt-2 text-[12px] text-slate-600">
-                        Caption + script + prompt visual siap generate.
-                      </div>
-                    </div>
                   </div>
-                </div>
 
-                {/* hairline */}
-                <div className="mt-4 h-px w-full bg-gradient-to-r from-transparent via-slate-300/60 to-transparent" />
-                
+                  {/* CTA */}
+                  <a
+                    href="/generator"
+                    type="button"
+                    className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#068773] to-[#0fb9a8] px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg"
+                  >
+                    Generate AI Draft Now
+                    <span className="text-lg">→</span>
+                  </a>
+                </div>
               </div>
             </div>
+
           </div>
 
           {/* Section header */}
@@ -171,18 +185,20 @@ export default function Dashboard(){
             </div>
 
             <div className="hidden sm:flex items-center gap-2">
-              <span className="inline-flex items-center rounded-full border border-slate-200/70 bg-white/70 px-3 py-1.5 text-[12px] font-semibold text-slate-700 backdrop-blur">
-                Tip: mulai dari Trends → Generate
+              <span className="inline-flex items-center rounded-full border border-slate-200/70 bg-white/70 px-3 py-1.5 text-[10px] font-semibold text-slate-700 backdrop-blur">
+                Tip: Start with Discovery → Generation
               </span>
             </div>
           </div>
 
           {/* Cards */}
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {cards.map((card) => (
               <AgentCardItem key={card.title} card={card} />
             ))}
           </div>
+
 
           {/* Footer note */}
          

@@ -1,7 +1,7 @@
 // src/pages/content-generation/Composer.tsx
 import { Plus, X, Sparkles, ChevronDown, Image as ImageIcon, Info } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
-import type { Workflow } from "./OptionsPanel"; // atau sesuaikan path kalau beda
+import type { Workflow } from "./options/OptionsPanel"; // atau sesuaikan path kalau beda
 
 export type Aspect = "1:1" | "4:5" | "16:9" | "9:16";
 export type Quality = "draft" | "standard" | "high";
