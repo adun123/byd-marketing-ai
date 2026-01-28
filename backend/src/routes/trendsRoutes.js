@@ -1,11 +1,23 @@
 import express from "express";
-import { getTrendInsights } from "../controllers/trendsController.js";
-import { getViralSnippets } from "../controllers/viralSnippetsController.js";
+
+import {
+  searchTrends,
+  generateTrendContent,
+  regenerateHeadlines,
+  polishContent,
+  getTrendOptions,
+  getTrendInsights,
+} from "../controllers/trendsController.js";
+
+
+
 const router = express.Router();
 
-// POST /api/trends/insights
-router.post("/snapshot", getTrendInsights);
-router.post("/viral-snippets", getViralSnippets);
-
+router.post("/search", searchTrends);
+router.post("/generate-content", generateTrendContent);
+router.post("/regenerate-headlines", regenerateHeadlines);
+router.post("/polish", polishContent);
+router.get("/options", getTrendOptions);
+router.post("/insights", getTrendInsights);
 
 export default router;
