@@ -50,7 +50,7 @@ app.get("/health/gemini", async (req, res) => {
 
 app.use("/api/image", imageRoutes);
 app.use("/api/trends", trendRoutes);
-// app.use("/api/video", videoRoutes); 
+
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
