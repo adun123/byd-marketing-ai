@@ -1,4 +1,4 @@
-// api/_lib/trendsCore.js
+// api/trends/trendsCore.js
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 /** Ambil object JSON pertama dari output model */
