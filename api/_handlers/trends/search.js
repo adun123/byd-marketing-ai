@@ -8,7 +8,7 @@ import {
   resolveTrendSourcesUrls,
   resolveGroundingSources,
   getGroundedModel,
-} from "../trends/trendsCore.js";
+} from "./trendsCore.js";
 
 export default async function handler(req, res) {
   // CORS basic
