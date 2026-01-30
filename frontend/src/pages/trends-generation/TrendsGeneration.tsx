@@ -208,22 +208,20 @@ function mapSearchTrendsToViralItems(
 
     // ✅ Jangan fallback grounding kalau user memilih platform spesifik
     const gi = !hasPref ? (api as any)?.grounding?.sources?.[idx]?.uri : undefined;
-
     let href = best?.url || gi || fallbackUri0;
 
     // ✅ kalau platform dipilih & href tidak match domain, anggap invalid
+    if (hasPref && prefNorm && href && !matchesWanted(href)) {
+      href = undefined;
+    }
+
+    // ✅ fallback: kalau href kosong, bikin link search sesuai platform (IG hashtag / tiktok search / dll)
     if (!href) {
       const kw = keywordFromTrend(t);
       const fallbackSrc = (prefNorm ?? "instagram") as ViralSnippetItem["source"];
       href = buildPlatformFallbackHref(fallbackSrc, kw);
     }
 
-
-    // ✅ OPSI 2: kalau tidak ada href (karena sources kosong), fallback ke platform search URL
-    if (!href && prefNorm) {
-      const kw = keywordFromTrend(t);
-      href = buildPlatformFallbackHref(prefNorm as ViralSnippetItem["source"], kw);
-    }
 
     // badge/icon: URL-first (lebih akurat)
    // badge/icon
