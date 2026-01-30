@@ -13,6 +13,7 @@ import imageGenerate from "./_handlers/image/generate.js";
 import imageEdit from "./_handlers/image/edit.js";
 import imageMarketing from "./_handlers/image/marketing.js";
 
+//pembaruan
 export default async function handler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const path = url.pathname; // ex: /api/trends/search
