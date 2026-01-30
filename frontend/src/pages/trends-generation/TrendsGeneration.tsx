@@ -121,7 +121,11 @@ function mapSearchTrendsToViralItems(
 ): ViralSnippetItem[] {
   const list = api?.trends || [];
 
-  const prefNorm = normalizePlatform(preferredPlatform); // "instagram-post" -> "instagram" | undefined
+  const prefNorm =
+    normalizePlatform(preferredPlatform) ??
+    normalizePlatform((api as any)?.platform) ??
+    "instagram";
+  // "instagram-post" -> "instagram" | undefined
   const hasPref = !!prefNorm;
 
   const want: ViralSnippetItem["source"] | "any" = prefNorm
@@ -208,9 +212,12 @@ function mapSearchTrendsToViralItems(
     let href = best?.url || gi || fallbackUri0;
 
     // ✅ kalau platform dipilih & href tidak match domain, anggap invalid
-    if (hasPref && prefNorm && !matchesWanted(href)) {
-      href = undefined;
+    if (!href) {
+      const kw = keywordFromTrend(t);
+      const fallbackSrc = (prefNorm ?? "instagram") as ViralSnippetItem["source"];
+      href = buildPlatformFallbackHref(fallbackSrc, kw);
     }
+
 
     // ✅ OPSI 2: kalau tidak ada href (karena sources kosong), fallback ke platform search URL
     if (!href && prefNorm) {
@@ -219,8 +226,8 @@ function mapSearchTrendsToViralItems(
     }
 
     // badge/icon: URL-first (lebih akurat)
+   // badge/icon
     const source = toSource(undefined, href);
-
     const metrics = seedMetrics(t.engagement?.estimated);
     const title = t.topic?.trim() || best?.title || "Viral snippet";
 
