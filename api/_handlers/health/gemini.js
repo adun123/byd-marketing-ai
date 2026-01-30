@@ -1,4 +1,4 @@
-import { checkGeminiHealth } from "../../lib/gemini.js";
+import { checkGeminiHealth } from "../../../lib/gemini.js";
 
 export default async function handler(req, res) {
   const health = await checkGeminiHealth();

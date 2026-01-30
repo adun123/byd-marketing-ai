@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
-import { getImageModel } from "../../lib/gemini.js";
-import { saveBase64Image, prepareImagePart, cleanupFiles } from "../../lib/imageUtils.js";
+import { getImageModel } from "../../../lib/gemini.js";
+import { saveBase64Image, prepareImagePart, cleanupFiles } from "../../../lib/imageUtils.js";
 
 export default async function handler(req, res) {
   // Only allow POST requests

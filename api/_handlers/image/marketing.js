@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
-import { getTextModel, getImageModel } from "../../lib/gemini.js";
-import { saveBase64Image, prepareImagePart, cleanupFiles } from "../../lib/imageUtils.js";
+import { getTextModel, getImageModel } from "../../../lib/gemini.js";
+import { saveBase64Image, prepareImagePart, cleanupFiles } from "../../../lib/imageUtils.js";
 
 function extractJson(text = "") {
   const start = text.indexOf("{");
