@@ -6,8 +6,14 @@ import TrendsGeneration from "./pages/trends-generation/TrendsGeneration";
 import MarketingDashboard from "./pages/marketing-dashboard/MarketingDashboard";
 
 import DraftGeneration from "./pages/draft-generation/DraftGeneration";
+import React from "react";
 
 export default function App() {
+  React.useEffect(() => {
+    const t = localStorage.getItem("theme");
+    if (t === "dark") document.documentElement.classList.add("dark");
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>

@@ -1,4 +1,7 @@
 import * as React from "react";
+import { useLocation } from "react-router-dom";
+import type { SourceMode } from "./options/OptionsStep1SourcePlatform";
+
 import { useEffect, useState } from "react";
 import ImageTab from "./tabs/ImageTab";
 import TopBarGenerate from "../../components/layout/TopBarGenerate";
@@ -12,27 +15,55 @@ import type { ContentGenTab } from "./SideNav";
 import type { GeneratedOutput, VideoAttachment, VideoOutput } from "./types";
 import { generateImageService } from "./services/imageService";
 import { downloadImage } from "./utils/download";
+import { cn } from "../../lib/cn";
+
+
+type ImgAttachment = {
+  id: string;
+  file: File;
+  previewUrl: string;
+};
+
 
 
 export default function ContentGeneration() {
-  const [isGenerating, setIsGenerating] = React.useState(false);
 
+  const [isGenerating, setIsGenerating] = React.useState(false);
   const [quality, setQuality] = useState<"draft" | "standard" | "high">("standard");
   const [model, setModel] = useState<"banana" | "gemini" | "other">("banana");
-
   const [workflow, setWorkflow] = useState<Workflow>("text_to_image");
   const [visualStyle, setVisualStyle] = useState<VisualStyle>("clean");
   const [aspect, setAspect] = useState<"1:1" | "4:5" | "16:9" | "9:16">("1:1");
-
   const [prompt, setPrompt] = useState("");
-  const [attachments, setAttachments] = useState<any[]>([]);
-  const [items, setItems] = useState<GeneratedOutput[]>([]);
+  const [attachments, setAttachments] = useState<ImgAttachment[]>([]);
 
+  const [items, setItems] = useState<GeneratedOutput[]>([]);
   const [tab, setTab] = useState<ContentGenTab>("image");
   const API_BASE = (import.meta.env.VITE_API_BASE?.trim() || "/api") as string;
-
   // sidebar preference
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+
+  const location = useLocation();
+
+  // NEW
+const [sourceMode, setSourceMode] = useState<SourceMode>("manual");
+const [draftScriptPreview, setDraftScriptPreview] = useState("");
+const [draftVisualPrompt, setDraftVisualPrompt] = useState("");
+
+useEffect(() => {
+  const st = location.state as any;
+
+  if (st?.from === "draft") {
+    setSourceMode("draft");
+    setWorkflow("text_to_image");
+
+    setPrompt(st.imagePrompt || "");
+    setDraftScriptPreview(st.scriptPreview || "");
+    setDraftVisualPrompt(st.imagePrompt || "");
+
+  }
+}, [location.state]);
 
   useEffect(() => {
     const saved = localStorage.getItem("cg.sidebarOpen");
@@ -135,83 +166,239 @@ async function handleGenerate({ prompt }: { prompt: string }) {
       setIsGenerating(false);
     }, 1000);
   }
+  
+
+function addImages(files: FileList) {
+  const next = Array.from(files).map((file) => ({
+    id: crypto.randomUUID(),
+    file,
+    previewUrl: URL.createObjectURL(file),
+  }));
+  setAttachments((prev) => [...next, ...prev]);
+}
+
+function removeImage(id: string) {
+  setAttachments((prev) => {
+    const target = prev.find((x) => x.id === id);
+    if (target) URL.revokeObjectURL(target.previewUrl);
+    return prev.filter((x) => x.id !== id);
+  });
+}
+
+function clearImages() {
+  setAttachments((prev) => {
+    prev.forEach((x) => URL.revokeObjectURL(x.previewUrl));
+    return [];
+  });
+}
+
+function handlePickImages(files: FileList) {
+  const arr = Array.from(files);
+  if (arr.length === 0) return;
+
+  const max = workflow === "image_to_image" ? 6 : 1;
+  const picked = arr.slice(0, max);
+
+  const next: ImgAttachment[] = picked.map((file) => ({
+    id: crypto.randomUUID(),
+    file,
+    previewUrl: URL.createObjectURL(file),
+  }));
+
+  setAttachments((prev) => {
+    // upscale: replace
+    if (workflow === "upscale") {
+      prev.forEach((x) => URL.revokeObjectURL(x.previewUrl));
+      return next.slice(0, 1);
+    }
+
+    // image_to_image: merge + max 6
+    const merged = [...next, ...prev];
+    return merged.slice(0, 6);
+  });
+}
+
+function isContentReady(params: {
+  workflow: string;
+  visualStyle: string;
+  aspect: string;
+  quality: string;
+  model: string;
+}) {
+  const { workflow, visualStyle, aspect, quality, model } = params;
+  return Boolean(workflow && visualStyle && aspect && quality && model);
+}
+
 
 return (
-  <div className="mx-auto w-full px-4">
+  <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950 flex flex-col">
     <TopBarGenerate active="content" />
-   
 
-    <div className="flex min-w-0 flex-1 flex-col">
-      
+    <main className="flex-1">
+      <div className="mx-auto w-full max-w-7xl px-4 py-5">
+        {/* Page header */}
+        {/* <div className="mb-4">
+          <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
+            Content Generator
+          </h1>
+          <p className="mt-1 text-xs sm:text-[13px] text-slate-500 dark:text-slate-400">
+            Configure your workflow first, then generate image or video outputs.
+          </p>
+        </div> */}
 
-      {/* CONTENT */}
-      <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <SideNav
-          value={tab}
-          onSelect={setTab}
-          
+        <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+          {/* LEFT: SideNav / Config */}
+          <aside className="lg:sticky lg:top-[72px] lg:self-start">
+            <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-4 shadow-sm">
+              <SideNav value={tab} onSelect={setTab} />
+            </div>
 
-        />
+            <div className="mt-3 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-white/70 dark:bg-slate-900/40 p-3 text-[11px] text-slate-600 dark:text-slate-300 lg:hidden">
+              Tip: complete the configuration on the left to unlock generation tools.
+            </div>
+          </aside>
 
-        <div className="mt-4">
-          {tab === "image" ? (
-          <ImageTab
-              workflow={workflow}
-              setWorkflow={setWorkflow}
-              visualStyle={visualStyle}
-              setVisualStyle={setVisualStyle}
-              aspect={aspect}
-              setAspect={setAspect}
-              quality={quality}
-              setQuality={setQuality}
-              model={model}
-              setModel={setModel}
-              prompt={prompt}
-              setPrompt={setPrompt}
-              attachments={attachments}
-              setAttachments={setAttachments}
-              items={items}
-              isGenerating={isGenerating}
-              onGenerate={(p) => handleGenerate({ prompt: p })}
-              onDownload={downloadImage} setItems={function (_value: React.SetStateAction<GeneratedOutput[]>): void {
-                throw new Error("Function not implemented.");
-              } }          />
-          ) : (
-            <VideoTab
-              videoWorkflow={videoWorkflow}
-              setVideoWorkflow={setVideoWorkflow}
-              videoFormat={videoFormat}
-              setVideoFormat={setVideoFormat}
-              videoDurationSec={videoDurationSec}
-              setVideoDurationSec={setVideoDurationSec}
-              videoStyle={videoStyle}
-              setVideoStyle={setVideoStyle}
-              videoFps={videoFps}
-              setVideoFps={setVideoFps}
-              videoPrompt={videoPrompt}
-              setVideoPrompt={setVideoPrompt}
-              videoAttachments={videoAttachments}
-              setVideoAttachments={setVideoAttachments}
-              videoItems={videoItems}
-              isGenerating={isGenerating}
-              onGenerate={(p) => handleGenerateVideo({ prompt: p })}
-              onDownloadVideo={(it) => {
-                if (!it.videoUrl) return;
-                const a = document.createElement("a");
-                a.href = it.videoUrl;
-                a.download = `video-${it.id}.mp4`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-              }}
-              onSelectVideo={(it) => console.log("select video", it.id)}
-            />
-          )}
+          {/* RIGHT: Workspace */}
+          <section className="min-w-0">
+            <div className="relative rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 shadow-sm">
+              {/* ✅ gating */}
+              {(() => {
+                const ready = isContentReady({
+                  workflow,
+                  visualStyle,
+                  aspect,
+                  quality,
+                  model,
+                });
+
+                if (ready) return null;
+
+                return (
+                  <div className="absolute inset-0 z-10">
+                    {/* dim layer */}
+                    <div className="absolute inset-0 rounded-3xl bg-slate-950/5 dark:bg-slate-950/50 backdrop-blur-[2px]" />
+
+                    {/* lock card */}
+                    <div className="relative p-5 sm:p-6">
+                      <div className="mx-auto max-w-md rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-slate-950/80 p-5 shadow-sm">
+                        <div className="text-[12px] font-extrabold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                          Setup Required
+                        </div>
+                        <div className="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-50">
+                          Complete the left panel first
+                        </div>
+                        <p className="mt-1 text-[12px] leading-relaxed text-slate-600 dark:text-slate-300">
+                          Choose workflow, style, aspect ratio, quality, and model to unlock Image/Video generation.
+                        </p>
+
+                        {/* checklist */}
+                        <div className="mt-4 space-y-2 text-[12px]">
+                          <Req ok={!!workflow} label="Workflow" />
+                          <Req ok={!!visualStyle} label="Visual Style" />
+                          <Req ok={!!aspect} label="Aspect Ratio" />
+                          <Req ok={!!quality} label="Quality" />
+                          <Req ok={!!model} label="Model" />
+                        </div>
+
+                        <div className="mt-4 text-[11px] text-slate-500 dark:text-slate-400">
+                          Once completed, your right panel will be enabled automatically.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Content tabs (enabled behind the overlay) */}
+              <div className="">
+                {tab === "image" ? (
+                  <ImageTab
+                    workflow={workflow}
+                    setWorkflow={setWorkflow}
+                    visualStyle={visualStyle}
+                    setVisualStyle={setVisualStyle}
+                    aspect={aspect}
+                    setAspect={setAspect}
+                    quality={quality}
+                    setQuality={setQuality}
+                    model={model}
+                    setModel={setModel}
+                    prompt={prompt}
+                    setPrompt={setPrompt}
+                    items={items}
+                    setItems={setItems}
+                    isGenerating={isGenerating}
+                    onGenerate={(p) => handleGenerate({ prompt: p })}
+                    attachments={attachments}
+                    setAttachments={setAttachments}
+                    onPickImages={handlePickImages}
+                    onRemoveImage={removeImage}
+                    onClearImages={clearImages}
+                    sourceMode={sourceMode}
+                    setSourceMode={setSourceMode}
+                    draftScriptPreview={draftScriptPreview}
+                    draftVisualPrompt={draftVisualPrompt}
+                    onDownload={function (item: any): void {
+                      throw new Error("Function not implemented.");
+                    }}
+                  />
+                ) : (
+                  <VideoTab
+                    videoWorkflow={videoWorkflow}
+                    setVideoWorkflow={setVideoWorkflow}
+                    videoFormat={videoFormat}
+                    setVideoFormat={setVideoFormat}
+                    videoDurationSec={videoDurationSec}
+                    setVideoDurationSec={setVideoDurationSec}
+                    videoStyle={videoStyle}
+                    setVideoStyle={setVideoStyle}
+                    videoFps={videoFps}
+                    setVideoFps={setVideoFps}
+                    videoPrompt={videoPrompt}
+                    setVideoPrompt={setVideoPrompt}
+                    videoAttachments={videoAttachments}
+                    setVideoAttachments={setVideoAttachments}
+                    videoItems={videoItems}
+                    isGenerating={isGenerating}
+                    onGenerate={(p) => handleGenerateVideo({ prompt: p })}
+                    onDownloadVideo={(it) => {
+                      if (!it.videoUrl) return;
+                      const a = document.createElement("a");
+                      a.href = it.videoUrl;
+                      a.download = `video-${it.id}.mp4`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                    }}
+                    onSelectVideo={(it) => console.log("select video", it.id)}
+                  />
+                )}
+              </div>
+            </div>
+          </section>
         </div>
-       
-        
       </div>
-    </div>
+    </main>
   </div>
 );
+
+/** small helper row */
+function Req({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <div className="flex items-center justify-between rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-white dark:bg-slate-950 px-3 py-2">
+      <span className="text-slate-700 dark:text-slate-200 font-semibold">{label}</span>
+      <span
+        className={cn(
+          "rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.18em]",
+          ok
+            ? "bg-[#068773]/10 text-[#068773]"
+            : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+        )}
+      >
+        {ok ? "Done" : "Required"}
+      </span>
+    </div>
+  );
+}
+
 }

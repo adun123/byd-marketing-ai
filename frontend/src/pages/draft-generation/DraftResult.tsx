@@ -1,166 +1,227 @@
 import { RefreshCw, Lightbulb } from "lucide-react";
 import ScriptEditorCard from "./ScriptEditorCard";
-import { useState , useEffect} from "react";
+import {  useEffect} from "react";
 import VisualDescriptionCard from "./VisualDescriptionCard";
 import type { DraftContextPayload } from "../trends-generation/types";
+import type { GenerateContentResponse } from "./types";
+import DraftHookCard from "./components/DraftHookCard";
+import DraftHookCardSkeleton from "./components/DraftHookCardSkeleton";
+
 
 function cn(...s: Array<string | undefined | false>) {
   return s.filter(Boolean).join(" ");
 }
 
-export default function DraftResult({ draftCtx }: { draftCtx: DraftContextPayload | null }) {
+export default function DraftResult({
+  draftCtx,
+  generated,
+  isLoading,
+  error,
+  scriptHtml,
+  visualPrompt,
+  onChangeScript,
+  onChangeVisual,
+  onRegenerateAll,
+}: {
+  draftCtx: DraftContextPayload | null;
+  generated: GenerateContentResponse | null;
+  isLoading?: boolean;
+  error?: string | null;
 
+  scriptHtml?: string;
+  visualPrompt?: string;
+  onChangeScript: (v?: string) => void;
+  onChangeVisual: (v?: string) => void;
+
+  onRegenerateAll?: () => void;
+}) {
   
-    const terms = draftCtx?.derived?.terms ?? [];
-    const sentiments = draftCtx?.derived?.topSentiment ?? [];
-    const topTerm = terms[0] || "Topik Viral";
-    const secondTerm = terms[1] || "Insight";
-    const neg = sentiments.find((s) => s.sentiment === "Negative")?.name;
-    const pos = sentiments.find((s) => s.sentiment === "Positive")?.name;
-    const [visualPrompt, setVisualPrompt] = useState<string | undefined>(undefined);
-    const [scriptHtml, setScriptHtml] = useState<string | undefined>(undefined);
-    const hooks = [
-  {
-    text: `STOP SCROLLING: ${topTerm} lagi rame — ini cara bikin konten yang ikut keangkat!`,
-    badge: "TRENDY",
-    active: false,
-  },
-  {
-    text: pos
-      ? `Kenapa orang suka banget "${pos}"? Ini angle yang bisa kamu pakai hari ini.`
-      : `5 angle paling gampang untuk ngonten soal ${topTerm} (tanpa ribet).`,
-    badge: "HIGH CLICKRATE",
-    active: false,
-  },
-  {
-    text: neg
-      ? `Banyak yang protes soal "${neg}" — coba format ini biar kontenmu kebaca kredibel.`
-      : `Myth vs Fact: ${secondTerm} — bikin audiens langsung “oh gitu ya”.`,
-    badge: "DIRECT",
-    active: false,
-  },
-];
+
+ 
+
+
+  const hooks =
+  generated?.headlines?.length
+    ? generated.headlines.slice(0, 3).map((h) => ({
+        text: h.text,
+        badge: (h.type || "TRENDY").toString().toUpperCase(),
+        active: false,
+      }))
+    : [];
+
+function escapeHtml(s: string) {
+  return s
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 
 useEffect(() => {
-  if (!draftCtx) return;
+  if (!generated) return;
 
-  if (!scriptHtml) {
-    const t1 = terms[0] || "Topik Viral";
-    const t2 = terms[1] || "Angle";
-    const snippet = draftCtx.viralSnippets?.[0]?.title || "snippet viral teratas";
+  // ✅ isi scriptHtml ke parent kalau belum ada
+  const slides = generated.storyline?.slides || [];
+  if (!scriptHtml && slides.length) {
+    const html = slides
+      .map(
+        (s) =>
+          `<p><strong>[SLIDE ${s.slideNumber}: ${s.title}]</strong><br/>${s.content}</p>` +
+          (s.visualCue ? `<p><em>Visual:</em> ${s.visualCue}</p>` : "")
+      )
+      .join("");
 
-    setScriptHtml(
-      `<p><strong>[SLIDE 1: HOOK]</strong><br/>Buka dengan: <em>${hooks[0].text}</em></p>
-       <p><strong>[SLIDE 2: CONTEXT]</strong><br/>Jelaskan singkat kenapa ${t1} naik: ambil dari tren & komentar netizen.</p>
-       <p><strong>[SLIDE 3: VALUE]</strong><br/>Kasih 3 poin: ${t1}, ${t2}, dan contoh cepat dari "${snippet}".</p>
-       <p><strong>[SLIDE 4: CTA]</strong><br/>Ajak audiens komentar/share: “Kamu tim setuju atau nggak?”</p>`
-    );
+    onChangeScript(html); // ✅ penting: set ke parent (biar kepersist)
   }
 
-  if (!visualPrompt) {
-    const t = terms[0] || "viral trend";
-    setVisualPrompt(
-      `Cinematic social content, clean modern layout, focus on "${t}", high contrast typography, soft gradient background, product-friendly, Indonesian audience style, 4:5 ratio, sharp details.`
-    );
-  }
+  // ✅ isi visualPrompt ke parent kalau belum ada
+  const p =
+    generated.visualDescription?.photo?.prompt ||
+    generated.visualDescription?.video?.prompt;
+
+  if (!visualPrompt && p) onChangeVisual(p); // ✅ ke parent
   // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [draftCtx]);
+}, [generated]);
 
 
-  return (
-    <div className="mx-auto w-full px-4 py-6">
-      {/* Header */}
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <div className="text-xl font-bold tracking-tight text-slate-900">
-            New Campaign Draft
-          </div>
-          <div className="mt-1 text-sm text-slate-500">
-            Draft ID : <span className="font-semibold">#HK-8821-2024</span>
-          </div>
+
+
+return (
+  
+  <div className="w-full p-5">
+    {/* Header */}
+    
+    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        
+      <div className="min-w-0">
+        
+        <div className="text-base font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
+          Campaign Draft
         </div>
-        <div className="mt-1 text-sm text-slate-500">
-          Source:{" "}
-          <span className="font-semibold">
-            {draftCtx ? "Import from Trend Insight" : "Manual / Empty"}
+
+        <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+          Draft ID:{" "}
+          <span className="font-semibold text-slate-700 dark:text-slate-200">
+            #HK-8821-2024
           </span>
         </div>
       </div>
 
-      {/* Section header */}
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600/10">
-                <Lightbulb className="h-4 w-4 text-emerald-600" />
-            </span>
-            Hook / Headline Options
-        </div>
+      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+        Source:{" "}
+        <span className="font-semibold text-slate-700 dark:text-slate-200">
+          {draftCtx ? "Imported from Trend Insight" : "Manual / Empty"}
+        </span>
+      </div>
+    </div>
 
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-700 hover:underline"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Regenerate All
-        </button>
+    {/* Hooks header */}
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2 text-[12px] font-semibold text-slate-900 dark:text-slate-50">
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-[#068773]/10 text-[#068773]">
+          <Lightbulb className="h-4 w-4" />
+        </span>
+        Hook / Headline Options
       </div>
 
-      {/* Cards */}
+      <button
+        type="button"
+        onClick={onRegenerateAll}
+        disabled={isLoading}
+        className={cn(
+          "inline-flex items-center gap-2 rounded-xl px-2 py-1 text-[11px] font-semibold transition",
+          "focus:outline-none focus:ring-2 focus:ring-[#068773]/20",
+          isLoading
+            ? "text-slate-400 cursor-not-allowed"
+            : "text-[#068773] hover:bg-[#068773]/10"
+        )}
+      >
+        <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+        {isLoading ? "Generating…" : "Regenerate"}
+      </button>
+    </div>
+
+    {/* Error */}
+    {error ? (
+      <div className="rounded-2xl border border-rose-200/70 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 p-3 text-[12px] text-rose-700 dark:text-rose-200">
+        {error}
+      </div>
+    ) : null}
+
+    {/* Empty */}
+    {!generated && !isLoading ? (
+      <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-950 p-4 text-[12px] text-slate-600 dark:text-slate-300">
+        Click <b>Generate Draft</b> on the left panel to create hooks, scripts, and visual prompts.
+      </div>
+    ) : null}
+
+    {/* Loading helper */}
+    {isLoading ? (
+      <div className="mb-3 text-[11px] text-slate-500 dark:text-slate-400">
+        AI is crafting the best hooks based on trends & your configuration…
+      </div>
+    ) : null}
+
+    {/* Hooks cards */}
+    {isLoading ? (
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <DraftHookCardSkeleton key={i} />
+        ))}
+      </div>
+    ) : hooks.length ? (
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {hooks.map((h, idx) => (
-          <div
+          <DraftHookCard
             key={idx}
-            className={cn(
-              "rounded-2xl border bg-white p-5 transition",
-              h.active
-                ? "border-emerald-600 shadow-[0_14px_40px_-26px_rgba(5,150,105,0.45)]"
-                : "border-slate-200 hover:shadow-[0_14px_40px_-26px_rgba(15,23,42,0.25)]"
-            )}
-          >
-            <div className="text-sm font-semibold leading-relaxed text-slate-900">
-              “{h.text}”
-            </div>
+            text={h.text}
+            badge={h.badge}
+            onUse={(t) => {
+              const hookHtml = `
+                <p>
+                  <strong style="color:#068773;">HOOK:</strong>
+                  “${escapeHtml(t)}”
+                </p>
+                <p><br/></p>
+              `;
 
-            <div className="mt-4">
-              <span
-                className={cn(
-                  "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold",
-                  h.badge === "HIGH CLICKRATE"
-                    ? "bg-emerald-600/10 text-emerald-700"
-                    : "bg-slate-100 text-slate-600"
-                )}
-              >
-                {h.badge}
-              </span>
-            </div>
-          </div>
+              // append hook ke atas, lalu lanjut isi script yang sudah ada
+              const next = `${hookHtml}${scriptHtml || ""}`;
+              onChangeScript(next);
+
+              // optional: fokus ke editor
+              requestAnimationFrame(() => {
+                const el = document.querySelector('[data-script-editor="true"]') as HTMLElement | null;
+                el?.focus?.();
+              });
+            }}
+          />
         ))}
       </div>
 
+    ) : null}
 
-      {/* Storyline & Script + Visual Description */}
-        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* LEFT: Storyline & Script */}
-            <ScriptEditorCard
-                value={scriptHtml}
-                onChange={setScriptHtml}
-                onPolish={(plain) => {
-                    console.log("POLISH REQUEST:", plain);
-                    // nanti sambung ke API AI → lalu setScriptHtml(updatedHtml)
-                }}
-            />
-
-        {/* RIGHT: Visual Description */}
-         <VisualDescriptionCard
-          value={visualPrompt}
-          onChange={setVisualPrompt}
-          onPolish={(plain) => console.log("polish prompt:", plain)}
+    {/* Script + Visual */}
+    <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="animate-[fadeUp_.18s_ease-out]">
+        <ScriptEditorCard
+          value={scriptHtml}
+          onChange={onChangeScript}
+          onPolish={(plain) => console.log("POLISH:", plain)}
+          isLoading={isLoading}
         />
-        
+      </div>
 
-        
-        </div>
-
+      <div className="animate-[fadeUp_.18s_ease-out]">
+        <VisualDescriptionCard
+          value={visualPrompt}
+          onChange={onChangeVisual}
+          onPolish={(plain) => console.log("polish:", plain)}
+        />
+      </div>
     </div>
-  );
+  </div>
+);
 }

@@ -2,35 +2,205 @@ import { getGroundedModel, getTextModel } from "../config/gemini.js";
 
 const urlCache = new Map();
 
-async function resolveRedirectUrl(redirectUrl) {
-  if (!redirectUrl || !redirectUrl.includes("vertexaisearch.cloud.google.com")) {
-    return redirectUrl;
-  }
+// ini denny
+// async function resolveRedirectUrl(redirectUrl) {
+//   if (!redirectUrl || !redirectUrl.includes("vertexaisearch.cloud.google.com")) {
+//     return redirectUrl;
+//   }
 
-  if (urlCache.has(redirectUrl)) {
-    return urlCache.get(redirectUrl);
-  }
+//   if (urlCache.has(redirectUrl)) {
+//     return urlCache.get(redirectUrl);
+//   }
 
-  try {
+//   try {
+//     const controller = new AbortController();
+//     const timeout = setTimeout(() => controller.abort(), 5000);
+
+//     const response = await fetch(redirectUrl, {
+//       method: "HEAD",
+//       redirect: "follow",
+//       signal: controller.signal,
+//     });
+
+//     clearTimeout(timeout);
+
+//     const resolvedUrl = response.url;
+//     urlCache.set(redirectUrl, resolvedUrl);
+//     return resolvedUrl;
+//   } catch (err) {
+//     return redirectUrl;
+//   }
+// }
+
+async function resolveRedirectUrl(inputUrl) {
+  if (!inputUrl) return inputUrl;
+
+  if (urlCache.has(inputUrl)) return urlCache.get(inputUrl);
+
+  const controllerFetch = (ms) => {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(), ms);
+    return { controller, timeout };
+  };
 
-    const response = await fetch(redirectUrl, {
-      method: "HEAD",
-      redirect: "follow",
-      signal: controller.signal,
-    });
+  const tryFollow = async (method) => {
+    const { controller, timeout } = controllerFetch(8000);
+    try {
+      const resp = await fetch(inputUrl, {
+        method,
+        redirect: "follow",
+        signal: controller.signal,
+        headers: { "User-Agent": "Mozilla/5.0" },
+      });
+      clearTimeout(timeout);
+      return resp?.url || null;
+    } catch {
+      clearTimeout(timeout);
+      return null;
+    }
+  };
 
-    clearTimeout(timeout);
+  const tryCanonicalFromHtml = async () => {
+    const { controller, timeout } = controllerFetch(9000);
+    try {
+      const resp = await fetch(inputUrl, {
+        method: "GET",
+        redirect: "follow",
+        signal: controller.signal,
+        headers: { "User-Agent": "Mozilla/5.0" },
+      });
+      clearTimeout(timeout);
 
-    const resolvedUrl = response.url;
-    urlCache.set(redirectUrl, resolvedUrl);
-    return resolvedUrl;
-  } catch (err) {
-    return redirectUrl;
+      const finalUrl = resp?.url || inputUrl;
+      const ct = (resp.headers.get("content-type") || "").toLowerCase();
+      if (!ct.includes("text/html")) return null;
+
+      const html = await resp.text();
+
+      // 1) canonical
+      const canon = html.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i)?.[1];
+      if (canon && canon.startsWith("http")) return canon;
+
+      // 2) og:url
+      const og = html.match(/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i)?.[1];
+      if (og && og.startsWith("http")) return og;
+
+      // 3) fallback ke url final hasil GET
+      return finalUrl;
+    } catch {
+      clearTimeout(timeout);
+      return null;
+    }
+  };
+
+  // (A) follow redirect dulu (HEAD lalu GET)
+  const headUrl = await tryFollow("HEAD");
+  const getUrl = headUrl || (await tryFollow("GET"));
+  const followed = getUrl || inputUrl;
+
+  // kalau sudah berubah, cukup
+  if (followed !== inputUrl) {
+    urlCache.set(inputUrl, followed);
+    return followed;
   }
+
+  // (B) kalau tidak berubah, coba canonical HTML (khusus situs yang sering begitu)
+  const host = (() => {
+    try {
+      return new URL(inputUrl).hostname.replace(/^www\./, "").toLowerCase();
+    } catch {
+      return "";
+    }
+  })();
+
+  const needsCanonical =
+    host.includes("katadata.co.id") ||
+    host.includes("otomotif.katadata.co.id") ||
+    host.includes("otosia.com") ||
+    host.includes("liputan6.com");
+
+  if (needsCanonical) {
+    const canonical = await tryCanonicalFromHtml();
+    const resolved = canonical || followed;
+    urlCache.set(inputUrl, resolved);
+    return resolved;
+  }
+
+  urlCache.set(inputUrl, followed);
+  return followed;
 }
 
+
+//dibagain biar :
+function allowedDomainsForPlatform(platformNorm) {
+  const p = (platformNorm || "").toLowerCase();
+  if (p.includes("instagram")) return ["instagram.com"];
+  if (p.includes("tiktok")) return ["tiktok.com", "vt.tiktok.com", "vm.tiktok.com", "m.tiktok.com"];
+  if (p.includes("youtube")) return ["youtube.com", "youtu.be"];
+  if (p.includes("linkedin")) return ["linkedin.com"];
+  return [];
+}
+
+
+
+// TikTok "video url" pattern yang kamu mau
+function isTikTokVideoUrl(url) {
+  if (!url) return false;
+  const u = String(url).toLowerCase();
+  // contoh: https://www.tiktok.com/@user/video/123
+  return u.includes("tiktok.com/@") && u.includes("/video/");
+}
+
+function enforcePlatformSources(trendsData, platformNorm) {
+  const domains = allowedDomainsForPlatform(platformNorm);
+  if (!domains.length) return trendsData;
+
+  const p = (platformNorm || "").toLowerCase();
+  const trends = Array.isArray(trendsData?.trends) ? trendsData.trends : [];
+
+  return {
+    ...trendsData,
+    trends: trends.map((t) => {
+      const sources = Array.isArray(t?.sources) ? t.sources : [];
+
+      // 1) filter domain sesuai platform
+      let kept = sources.filter((s) => urlMatchesDomains(s?.url, domains));
+
+      // 2) khusus tiktok: prioritas video url format @/video/
+      if (p.includes("tiktok")) {
+        const videoFirst = kept.filter((s) => isTikTokVideoUrl(s?.url));
+        kept = videoFirst.length ? videoFirst : kept;
+      }
+
+      return { ...t, sources: kept };
+    }),
+  };
+}
+
+function countPlatformUrls(trendsData, platformNorm) {
+  const domains = allowedDomainsForPlatform(platformNorm);
+  const trends = Array.isArray(trendsData?.trends) ? trendsData.trends : [];
+  let c = 0;
+  for (const t of trends) {
+    const sources = Array.isArray(t?.sources) ? t.sources : [];
+    for (const s of sources) {
+      if (urlMatchesDomains(s?.url, domains)) c++;
+    }
+  }
+  return c;
+}
+
+
+function urlMatchesDomains(url, domains) {
+  if (!url || !domains?.length) return true;
+  const u = String(url).toLowerCase();
+  return domains.some((d) => u.includes(d));
+}
+
+
+
+
+//ini denny
 async function resolveGroundingSources(sources) {
   if (!sources || !Array.isArray(sources)) return sources;
 
@@ -43,6 +213,41 @@ async function resolveGroundingSources(sources) {
 
   return resolved;
 }
+async function resolveTrendSourcesUrls(trendsData, platformNorm) {
+  if (!trendsData?.trends || !Array.isArray(trendsData.trends)) return trendsData;
+
+  // kumpulkan semua url sources
+  const all = [];
+  for (const t of trendsData.trends) {
+    if (!t?.sources || !Array.isArray(t.sources)) continue;
+    for (const s of t.sources) {
+      if (s?.url) all.push(s.url);
+    }
+  }
+
+  // resolve unique untuk hemat call
+  const uniq = Array.from(new Set(all));
+  const resolvedPairs = await Promise.all(
+    uniq.map(async (url) => [url, await resolveRedirectUrl(url)])
+  );
+  const map = new Map(resolvedPairs);
+
+  // tulis balik ke trendsData
+  trendsData.trends = trendsData.trends.map((t) => {
+    if (!t?.sources || !Array.isArray(t.sources)) return t;
+    return {
+      ...t,
+      sources: t.sources.map((s) => ({
+        ...s,
+        url: map.get(s.url) || s.url,
+      })),
+    };
+  });
+
+  return trendsData;
+}
+
+// ini maman nyoba meyesuaikan
 
 function extractJson(text = "") {
   const start = text.indexOf("{");
@@ -178,19 +383,144 @@ export const getTrendInsights = async (req, res) => {
   }
 };
 
+
+//khusus nyari trends:
+function normalizePlatform(p) {
+  const s = (p || "").toLowerCase();
+  if (s.includes("tiktok")) return "tiktok";
+  if (s.includes("youtube")) return "youtube";
+  if (s.includes("linkedin")) return "linkedin";
+  if (s.includes("instagram")) return "instagram";
+  // kalau gak jelas, biarkan null supaya prompt multi-platform
+  return null;
+}
+
+function normalizeTopic(t) {
+  const s = (t || "").toLowerCase();
+  // ini “contentType” kamu (soft-campaign, hard-sell, edu-ent) bukan industry.
+  // untuk konteks BYD, kita fallback automotive/ev.
+  if (!s) return "automotive";
+  if (s.includes("automotive") || s.includes("ev") || s.includes("vehicle") || s.includes("car")) return s;
+  if (s.includes("soft") || s.includes("hard") || s.includes("campaign") || s.includes("edu") || s.includes("ent")) {
+    return "automotive";
+  }
+  return s;
+}
+
+function isValidHttpUrl(u) {
+  if (!u || typeof u !== "string") return false;
+  return u.startsWith("http://") || u.startsWith("https://");
+}
+
+function uniqBy(arr, keyFn) {
+  const seen = new Set();
+  const out = [];
+  for (const x of arr || []) {
+    const k = keyFn(x);
+    if (!k || seen.has(k)) continue;
+    seen.add(k);
+    out.push(x);
+  }
+  return out;
+}
+
+function tokenize(s) {
+  return (s || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/gi, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 4);
+}
+
+function scoreTitleMatch(trendTitle, sourceTitle) {
+  const a = tokenize(trendTitle);
+  const b = tokenize(sourceTitle);
+  if (!a.length || !b.length) return 0;
+  const setB = new Set(b);
+  let hit = 0;
+  for (const w of a) if (setB.has(w)) hit++;
+  // skor sederhana: jumlah kata yang match
+  return hit;
+}
+
+function enrichTrendsSourcesFromGrounding(trendsData, groundingMetadata) {
+  const chunks = groundingMetadata?.groundingChunks || [];
+  const webSources = chunks
+    .map((c) => ({
+      title: c.web?.title,
+      url: c.web?.uri, // uri ini biasanya URL asli (lebih baik daripada vertex redirect di frontend)
+      platform: "news",
+    }))
+    .filter((s) => s.title && isValidHttpUrl(s.url));
+
+  const pool = uniqBy(webSources, (s) => s.url);
+
+  if (!trendsData?.trends?.length) return trendsData;
+
+  // dedupe URL lintas trend supaya gak sama semua
+  const used = new Set();
+
+  trendsData.trends = trendsData.trends.map((t) => {
+    const existing = (t.sources || []).filter((s) => isValidHttpUrl(s.url));
+    const existingUniq = uniqBy(existing, (s) => s.url).filter((s) => !used.has(s.url));
+
+    // kalau sudah ada sources valid → pakai dulu
+    if (existingUniq.length) {
+      existingUniq.forEach((s) => used.add(s.url));
+      return { ...t, sources: existingUniq.slice(0, 2) };
+    }
+
+    // kalau kosong → cari dari grounding pool yang paling match sama topic
+    const scored = pool
+      .map((s) => ({
+        s,
+        score: scoreTitleMatch(t.topic || t.keyTopic || "", s.title || ""),
+      }))
+      .filter((x) => x.score > 0 && !used.has(x.s.url))
+      .sort((a, b) => b.score - a.score);
+
+    if (scored.length) {
+      const picked = scored.slice(0, 2).map((x) => x.s);
+      picked.forEach((s) => used.add(s.url));
+      return { ...t, sources: picked };
+    }
+
+    // fallback terakhir: ambil source pertama yang belum dipakai
+    const fallback = pool.find((s) => !used.has(s.url));
+    if (fallback) {
+      used.add(fallback.url);
+      return { ...t, sources: [fallback] };
+    }
+
+    return t;
+  });
+
+  return trendsData;
+}
+
+// ✅ FIXED (Controller): 
+// 1) resolveTrendSourcesUrls dipanggil sekali saja.
+// 2) enforcePlatformSources dipanggil PALING TERAKHIR (final guard).
+// 3) kalau platform spesifik, grounding DIHILANGKAN (biar frontend tidak fallback ke web/blog).
+// 4) (opsional) filter grounding sources by domain kalau kamu tetap mau tampilkan.
+
 export const searchTrends = async (req, res) => {
   try {
     const { query, platform, topic, language } = req.body;
 
-    if (!query) {
-      return res.status(400).json({ error: "Query is required" });
-    }
+    if (!query) return res.status(400).json({ error: "Query is required" });
 
     const lang = language || "en";
     const langInstruction = lang === "id" ? "Respond in Indonesian" : "Respond in English";
 
-    const platformFilter = platform ? `Focus on ${platform} platform trends.` : "Include trends from Instagram, TikTok, YouTube, LinkedIn.";
-    const topicFilter = topic ? `Focus on ${topic} industry/topic.` : "";
+    const platformNorm = normalizePlatform(platform);
+    const topicNorm = normalizeTopic(topic);
+
+    const platformFilter = platformNorm
+      ? `Focus on ${platformNorm} platform trends.`
+      : "Include trends from Instagram, TikTok, YouTube, LinkedIn.";
+
+    const topicFilter = topicNorm ? `Focus on ${topicNorm} industry/topic.` : "";
 
     const searchPrompt = `Search for the latest viral trends and topics related to: "${query}"
 ${platformFilter}
@@ -206,16 +536,16 @@ Return a JSON object with this exact structure:
       "keyTopic": "OneWordKeyword",
       "scale": 0.85,
       "sentiment": {
-        "positive": 5%,
-        "negative": 70%,
-        "neutral": 15%,
+        "positive": 5,
+        "negative": 70,
+        "neutral": 15,
         "label": "positive"
       },
       "sources": [
         {
           "title": "Source article/post title",
           "url": "https://example.com/article",
-          "platform": "instagram"
+          "platform": "${platformNorm || "instagram|tiktok|youtube|linkedin"}"
         }
       ],
       "description": "Brief description of why this is trending",
@@ -232,6 +562,18 @@ Return a JSON object with this exact structure:
 }
 
 Find 5-10 relevant trending topics. Scale is 0.0-1.0 representing trend strength.
+
+${platformNorm ? `
+IMPORTANT:
+- In "sources", return links ONLY from the ${platformNorm} domain:
+  - instagram: instagram.com/p/ or instagram.com/reel/
+  - tiktok: tiktok.com/ (vt.tiktok.com / vm.tiktok.com allowed)
+  - youtube: youtube.com/watch or youtu.be/
+  - linkedin: linkedin.com/
+- If you cannot find enough ${platformNorm} links, keep "sources" as an empty array for that trend (do NOT fill with news/blog).
+- Do NOT substitute web/news/blog/youtube links when platform is provided.
+` : ""}
+
 Only return valid JSON, no markdown.`;
 
     const model = getGroundedModel();
@@ -240,47 +582,107 @@ Only return valid JSON, no markdown.`;
     const text = response.text();
 
     let trendsData;
+
     try {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        trendsData = JSON.parse(jsonMatch[0]);
-      } else {
-        throw new Error("No JSON found");
+      if (!jsonMatch) throw new Error("No JSON found");
+
+      trendsData = JSON.parse(jsonMatch[0]);
+
+      // ✅ 1) enforce dulu
+      trendsData = enforcePlatformSources(trendsData, platformNorm);
+
+      // ✅ 2) retry khusus tiktok jika 0 link tiktok (opsional)
+      const isTikTok = (platformNorm || "").toLowerCase() === "tiktok";
+      if (isTikTok && countPlatformUrls(trendsData, platformNorm) === 0) {
+        const retryPrompt = `Find TikTok viral trends for: "${query}"
+Return ONLY valid JSON with the same structure as before.
+CRITICAL:
+- sources.url MUST be TikTok video links only:
+  https://www.tiktok.com/@<username>/video/<id>
+  or https://vt.tiktok.com/... / https://vm.tiktok.com/...
+- Do NOT include web/news/blog/youtube links.
+- If you can't find a TikTok link, set sources to [].
+${langInstruction}.
+Only return valid JSON, no markdown.`;
+
+        const retryResult = await model.generateContent(retryPrompt);
+        const retryResp = await retryResult.response;
+        const retryText = retryResp.text();
+        const retryMatch = retryText.match(/\{[\s\S]*\}/);
+        if (retryMatch) {
+          const retryJson = JSON.parse(retryMatch[0]);
+          trendsData = enforcePlatformSources(retryJson, platformNorm);
+        }
       }
+
+      // ✅ 3) resolve redirect (sekali saja)
+      trendsData = await resolveTrendSourcesUrls(trendsData, platformNorm);
+
+      // ✅ 4) final guard: enforce paling terakhir
+      trendsData = enforcePlatformSources(trendsData, platformNorm);
+
     } catch (parseError) {
-      trendsData = {
-        trends: [],
-        summary: "Unable to parse trends data",
-        raw: text,
-      };
+      trendsData = { trends: [], summary: "Unable to parse trends data", raw: text };
     }
 
-    const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
+    // ✅ Grounding: jangan kirim kalau platform spesifik (biar frontend gak fallback ke web/blog)
+    let grounding = null;
+    if (!platformNorm) {
+      const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
+      if (groundingMetadata) {
+        const rawSources =
+          groundingMetadata.groundingChunks?.map((chunk) => ({
+            title: chunk.web?.title,
+            uri: chunk.web?.uri,
+          })) || [];
 
-    const rawSources = groundingMetadata?.groundingChunks?.map(chunk => ({
-      title: chunk.web?.title,
-      uri: chunk.web?.uri,
-    })) || [];
+        const resolvedSources = await resolveGroundingSources(rawSources);
 
-    const resolvedSources = await resolveGroundingSources(rawSources);
+        grounding = {
+          searchQueries: groundingMetadata.webSearchQueries,
+          sources: resolvedSources,
+        };
+      }
+    }
 
-    res.json({
+    return res.json({
       success: true,
       query,
-      platform: platform || "all",
-      topic: topic || "general",
+      platform: platformNorm || "all",
+      topic: topicNorm || "general",
       ...trendsData,
-      grounding: groundingMetadata ? {
-        searchQueries: groundingMetadata.webSearchQueries,
-        sources: resolvedSources,
-      } : null,
+      grounding,
     });
+
   } catch (error) {
     console.error("Search Trends Error:", error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
+``
 
+
+      // const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
+
+      // const rawSources = groundingMetadata?.groundingChunks?.map(chunk => ({
+      //   title: chunk.web?.title,
+      //   uri: chunk.web?.uri,
+      // })) || [];
+
+      // const resolvedSources = await resolveGroundingSources(rawSources);
+
+      // res.json({
+      //   success: true,
+      //   query,
+      //   platform: platform || "all",
+      //   topic: topic || "general",
+      //   ...trendsData,
+      //   grounding: groundingMetadata ? {
+      //     searchQueries: groundingMetadata.webSearchQueries,
+      //     sources: resolvedSources,
+      //   } : null,
+      // });
 export const generateTrendContent = async (req, res) => {
   try {
     const {

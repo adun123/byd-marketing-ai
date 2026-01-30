@@ -1,77 +1,143 @@
-import cn from "../ui/cn";
+
+import { useNavigate } from "react-router-dom";
 import type { AgentCard } from "../../types/dashboard";
 
-export default function AgentCardItem({ card }: { card: AgentCard }) {
-  const Comp = card.href ? "a" : "div";
+function cn(...xs: Array<string | false | null | undefined>) {
+  return xs.filter(Boolean).join(" ");
+}
+
+type Accent = "emerald" | "blue" | "purple" | "amber";
+
+const accentMap: Record<
+  Accent,
+  { bubble: string; iconWrap: string; ctaIconWrap: string }
+> = {
+  emerald: {
+    bubble: "bg-emerald-500/5",
+    iconWrap: "bg-emerald-500/10 text-emerald-600",
+    ctaIconWrap: "text-emerald-700 dark:text-emerald-400",
+  },
+  blue: {
+    bubble: "bg-blue-500/5",
+    iconWrap: "bg-blue-500/10 text-blue-600",
+    ctaIconWrap: "text-blue-700 dark:text-blue-400",
+  },
+  purple: {
+    bubble: "bg-purple-500/5",
+    iconWrap: "bg-purple-500/10 text-purple-600",
+    ctaIconWrap: "text-purple-700 dark:text-purple-400",
+  },
+  amber: {
+    bubble: "bg-amber-500/5",
+    iconWrap: "bg-amber-500/10 text-amber-600",
+    ctaIconWrap: "text-amber-700 dark:text-amber-400",
+  },
+};
+
+function pickAccentFromBadge(badge?: string): Accent {
+  const b = (badge || "").toLowerCase();
+  if (b.includes("trend")) return "emerald";
+  if (b.includes("generate")) return "blue";
+  if (b.includes("insight")) return "amber";
+  return "purple";
+}
+
+export default function AgentCardItem({
+  card,
+  className,
+}: {
+  card: AgentCard;
+  className?: string;
+}) {
+  const navigate = useNavigate();
+
+  const accent = pickAccentFromBadge(card.badge);
+  const a = accentMap[accent];
+
+  const cta = card.ctaLabel?.trim() || "Open";
 
   return (
-    <Comp
-      {...(card.href ? { href: card.href } : {})}
+    <div
       className={cn(
-        "group relative block overflow-hidden rounded-[28px] border border-slate-200/60",
-        "bg-white/80 backdrop-blur",
-        "shadow-[0_14px_40px_-28px_rgba(15,23,42,0.35)]",
-        "transition hover:-translate-y-0.5 hover:shadow-[0_22px_60px_-34px_rgba(15,23,42,0.45)]",
-        "focus:outline-none focus:ring-2 focus:ring-emerald-600/25"
+        "group relative bg-white dark:bg-slate-900",
+        "rounded-3xl p-7",
+        "border border-slate-200/80 dark:border-slate-800/80",
+        "transition-all duration-500",
+        "hover:border-primary/60 dark:hover:border-primary/60",
+        "hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-2",
+        "overflow-hidden",
+        className
       )}
     >
-      {/* soft corner blob like screenshot */}
-      <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-emerald-600/8 blur-2xl" />
-      <div className="pointer-events-none absolute right-6 top-6 h-20 w-20 rounded-full bg-slate-50" />
+      {/* bubble accent */}
+      <div
+        className={cn(
+          "absolute -right-6 -top-6 w-32 h-32 rounded-full",
+          a.bubble,
+          "group-hover:scale-150 transition-transform duration-700"
+        )}
+      />
 
-      <div className="relative p-6">
-        {/* Top row: icon */}
-        <div className="flex items-start justify-between">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-600/10 text-emerald-700 ring-1 ring-emerald-600/10">
-            {card.icon}
+      <div className="relative z-10">
+        {/* icon */}
+        <div
+          className={cn(
+            "w-14 h-14 rounded-2xl flex items-center justify-center mb-6",
+            a.iconWrap,
+            "group-hover:bg-primary group-hover:text-white transition-colors"
+          )}
+        >
+          {/* icon dari dashboardCards: ReactNode */}
+          <div className="scale-[1.05]">{card.icon}</div>
+        </div>
+
+        {/* badge */}
+        <span
+          className={cn(
+            "px-3 py-1 rounded-full inline-block mb-3",
+            "bg-slate-100 dark:bg-slate-800",
+            "text-[10px] font-extrabold text-slate-500",
+            "tracking-[0.18em] uppercase"
+          )}
+        >
+          {card.badge}
+        </span>
+
+        {/* meta */}
+        {card.meta ? (
+          <div className="text-[11px] font-semibold text-slate-400 mb-3">
+            {card.meta}
           </div>
-        </div>
+        ) : null}
 
-        {/* Badge (small capsule) */}
-        <div className="mt-5">
-          <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
-            {card.badge ?? card.meta ?? "WORKSPACE"}
-          </span>
-        </div>
-
-        {/* Title */}
-        <h3 className="mt-3 text-[18px] font-semibold leading-snug tracking-[-0.02em] text-slate-900">
+        {/* title */}
+        <h3 className="text-lg font-extrabold mb-2 text-slate-900 dark:text-slate-50 leading-snug">
           {card.title}
         </h3>
 
-        {/* Desc */}
-        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+        {/* desc */}
+        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
           {card.desc}
         </p>
 
-        {/* Bottom CTA pill */}
-        <div className="mt-6">
-          {card.href ? (
-            <div
-              className={cn(
-                "inline-flex w-full items-center justify-center gap-2 rounded-full",
-                "border border-slate-200/70 bg-white/70 px-4 py-3",
-                "text-sm font-semibold text-slate-900",
-                "shadow-[0_1px_0_rgba(15,23,42,0.04)] transition",
-                "group-hover:border-emerald-600/20 group-hover:bg-emerald-600/5"
-              )}
-            >
-              {card.ctaLabel ?? "Open"}
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-900/5 text-slate-700 transition group-hover:bg-emerald-600/10 group-hover:text-emerald-700">
-                {/* small arrow */}
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M5 12h12" />
-                  <path d="M13 6l6 6-6 6" />
-                </svg>
-              </span>
-            </div>
-          ) : (
-            <div className="inline-flex w-full items-center justify-center rounded-full border border-slate-200/70 bg-white/60 px-4 py-3 text-sm font-semibold text-slate-400">
-              Coming soon
-            </div>
+        {/* CTA */}
+        <button
+          type="button"
+          onClick={() => navigate(card.href)}
+          className={cn(
+            "w-full py-3 rounded-2xl",
+            "bg-slate-100/90 dark:bg-slate-800/90",
+            "text-slate-900 dark:text-slate-100",
+            "flex items-center justify-center gap-2",
+            "font-bold text-xs shadow-sm",
+            "transition-all duration-300",
+            "hover:shadow-md active:scale-[0.99]"
           )}
-        </div>
+        >
+          {cta}
+          <span className={cn("text-base", a.ctaIconWrap)}>→</span>
+        </button>
       </div>
-    </Comp>
+    </div>
   );
 }

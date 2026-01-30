@@ -45,3 +45,25 @@ export type VideoOutput = {
   posterUrl?: string;
   error?: string;
 };
+
+
+export type FinalizeContentPayload = {
+  from: "draft";
+  draftId?: string;
+  topic?: string;
+
+  imagePrompt: string; // wajib
+
+  //  untuk preview (narasi)
+  scriptPreview?: string; // atau scriptHtml?: string
+
+  style?: string;
+  aspectRatio?: string;
+  brand?: string;
+};
+
+export type ImgAttachment = {
+  id: string;
+  file: File;
+  previewUrl: string;
+};

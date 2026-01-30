@@ -13,14 +13,23 @@ export type TargetAudience =
   | "genalpha-balanced"
   | "genalpha-emotional";
 
+  
+
 export type TrendsForm = {
-  platform: Platform;
-  contentType: ContentType;
-  targetAudience: TargetAudience;
-  product?: string;
-  brand?: string;
-  message?: string;
+  
+  platform: string;
+  contentType: string;
+  targetAudience: string;
+  product: string;
+  brand: string;
+  message: string;
+
+  // NEW (optional biar gak ngerusak flow lama)
+  query?: string;
+  topic?: "general" | "automotive" | "ev" | "technology" | "lifestyle";
+  language?: "en" | "id";
 };
+
 
 export type TrendsIdeas = {
   hooks: string[];
@@ -115,25 +124,78 @@ export type ViralSnippetsResponse = {
 // src/pages/trends-generation/types.ts
 export type DraftContextPayload = {
   form: TrendsForm;
-
   snapshot?: TrendSnapshot | null;
-
-  viralSnippets?: Array<{
-    id: string;
-    source: string;
-    authorHandle: string;
-    title: string;
-    thumbUrl?: string;
-    likes?: number;
-    comments?: number;
-    shares?: number;
-    href?: string;
-  }>;
 
   derived: {
     terms: string[];
     topSentiment: Array<{ name: string; sentiment: Sentiment; score: number }>;
   };
+
+  selectedTerms: string[]; // yang dipilih user
 };
-;
+
+
+export type GroundingSource = { title?: string; uri?: string };
+
+// trends-generation/types.ts
+export type SearchTrendsResponse = {
+  success: boolean;
+  query: string;
+
+  // ✅ tambah ini (sesuai response backend kamu)
+  grounding?: {
+    searchQueries?: string[];
+    sources?: Array<{ title?: string; uri?: string }>;
+  } | null;
+
+  trends: Array<{
+    topic: string;
+    keyTopic?: string;
+    scale?: number;
+    description?: string;
+    category?: string;
+    sentiment?: {
+      positive?: number;
+      negative?: number;
+      neutral?: number;
+      label?: "positive" | "negative" | "neutral";
+    };
+    sources?: Array<{ title: string; url: string; platform?: string }>;
+    engagement?: { estimated?: "high" | "medium" | "low"; reason?: string };
+  }>;
+};
+
+
+
+export type SearchTrendSource = {
+  title: string;
+  url: string;
+  platform: "instagram" | "tiktok" | "youtube" | "linkedin" | string;
+};
+
+export type SearchTrend = {
+  topic: string;
+  keyTopic?: string;
+  description?: string;
+  sentiment?: { label?: string };
+  sources?: SearchTrendSource[];
+  engagement?: { estimated?: "high" | "medium" | "low" };
+};
+
+
+
+export type ViralSnippetItem = {
+  id: string;
+  source: "instagram" | "tiktok" | "youtube" | "linkedin";
+  authorHandle: string;
+  title: string;
+  thumbUrl: string;
+  href?: string;
+  
+  likes: number;
+  comments: number;
+  shares: number;
+};
+
+
 

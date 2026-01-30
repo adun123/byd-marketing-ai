@@ -59,188 +59,204 @@ export default function OutputCanvasCard({
     ? `Terakhir: ${new Date(latest.createdAt).toLocaleTimeString("id-ID")}`
     : "Belum ada output";
 
-  return (
-    <div className="rounded-3xl border border-slate-200 bg-white shadow-[0_14px_40px_-28px_rgba(15,23,42,0.22)]">
-      {/* header */}
-      <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
+return (
+  <div className="overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 shadow-sm">
+    {/* header */}
+    <div className="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 px-4 py-3">
+      <div className="min-w-0 flex items-center gap-2">
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-[#068773]/10 text-[#068773]">
+          ✦
+        </span>
+
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-emerald-600/10 text-emerald-700">
-              ✦
-            </span>
-            <div className="min-w-0">
-              <div className="text-[13px] font-semibold text-slate-900">{title}</div>
-              <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                {subtitle}
-              </div>
-            </div>
+          <div className="truncate text-[12px] font-semibold text-slate-900 dark:text-slate-50">
+            {title}
           </div>
-        </div>
-
-        <div className="flex items-center gap-3 text-[10px] text-slate-400">
-          {items.length > 0 ? <span className="hidden sm:inline">{updatedLabel}</span> : null}
-
-          {items.length > 0 && onClear ? (
-            <button
-              type="button"
-              onClick={onClear}
-              className={cn(
-                "inline-flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-2.5 py-1.5",
-                "text-[10px] font-semibold text-rose-700 hover:bg-rose-100"
-              )}
-              title="Clear canvas"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Clear
-            </button>
-          ) : null}
+          <div className="mt-0.5 truncate text-[10px] font-extrabold uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
+            {subtitle}
+          </div>
         </div>
       </div>
 
-      {/* body */}
-      <div className="p-5">
-        {/* Preview */}
-        <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-          {items.length === 0 ? (
-            <div className="flex min-h-[360px] flex-col items-center justify-center text-center">
-              <div className="text-[12px] font-semibold text-slate-900">No output yet</div>
-              <div className="mt-1 text-[11px] text-slate-500">
-                Tulis prompt di panel kiri lalu klik <span className="font-semibold">Generate</span>.
-              </div>
+      <div className="flex items-center gap-2">
+        {items.length > 0 ? (
+          <span className="hidden sm:inline text-[10px] text-slate-400 dark:text-slate-500">
+            {updatedLabel}
+          </span>
+        ) : null}
 
-              <div className="mx-auto mt-4 max-w-md rounded-2xl border border-emerald-200/60 bg-white px-4 py-3 text-left">
-                <div className="text-[9px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
-                  Contoh prompt
-                </div>
-                <div className="mt-1 text-[11px] text-slate-600">
-                  “BYD Seal electric car in a futuristic city at sunset, cinematic lighting”
-                </div>
+        {items.length > 0 && onClear ? (
+          <button
+            type="button"
+            onClick={onClear}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-2xl border px-3 py-2",
+              "border-rose-200/80 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/30",
+              "text-[11px] font-semibold text-rose-700 dark:text-rose-300",
+              "hover:bg-rose-100 dark:hover:bg-rose-950/40"
+            )}
+            title="Clear canvas"
+          >
+            <Trash2 className="h-4 w-4" />
+            Clear
+          </button>
+        ) : null}
+      </div>
+    </div>
+
+    {/* body */}
+    <div className="p-4">
+      {/* Preview block */}
+      <div className="rounded-3xl border border-slate-200/70 dark:border-slate-800/70 bg-slate-50 dark:bg-slate-950 p-4">
+        {items.length === 0 ? (
+          <div className="flex min-h-[320px] flex-col items-center justify-center text-center">
+            <div className="text-[12px] font-semibold text-slate-900 dark:text-slate-50">
+              No output yet
+            </div>
+            <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+              Write a prompt on the left, then click <b>Generate</b>.
+            </div>
+
+            <div className="mx-auto mt-4 w-full max-w-md rounded-2xl border border-[#068773]/20 bg-white/70 dark:bg-slate-900/60 px-4 py-3 text-left">
+              <div className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-[#068773]">
+                Example prompt
+              </div>
+              <div className="mt-1 text-[11px] text-slate-600 dark:text-slate-300">
+                “BYD Seal electric car in a futuristic city at sunset, cinematic lighting”
               </div>
             </div>
-          ) : (
-            <div className="flex flex-col items-center">
-              <div className="w-full max-w-[420px]">
-                <div className="aspect-square overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_18px_48px_-28px_rgba(15,23,42,0.35)]">
+          </div>
+        ) : (
+          <div className="flex flex-col items-center">
+            <div className="w-full max-w-[520px]">
+              <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_18px_48px_-28px_rgba(15,23,42,0.35)]">
+                <div className="relative aspect-square">
                   {src ? (
                     <img
                       src={src}
                       alt="Generated"
-                      className="h-full w-full object-cover"
+                      className="absolute inset-0 h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-[11px] text-slate-400">
+                    <div className="absolute inset-0 grid place-items-center text-[11px] text-slate-400">
                       Generated Preview
                     </div>
                   )}
-                </div>
 
-                {/* mini actions (Scale Up / Edit Result) */}
-                <div className="mt-4 flex items-center justify-center gap-2">
-                  <button
-                    type="button"
-                    disabled={!latest}
-                    onClick={() => latest && onScaleUp?.(latest)}
-                    className={cn(
-                      "inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2",
-                      "text-[11px] font-semibold transition",
-                      "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
-                      !latest && "opacity-60"
-                    )}
-                    title="Scale up"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Scale Up
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={!latest}
-                    onClick={() => latest && onEdit?.(latest)}
-                    className={cn(
-                      "inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2",
-                      "text-[11px] font-semibold transition",
-                      "border border-emerald-600/20 bg-emerald-600/10 text-emerald-700 hover:bg-emerald-600/15",
-                      !latest && "opacity-60"
-                    )}
-                    title="Edit result"
-                  >
-                    <Pencil className="h-4 w-4" />
-                    Edit Result
-                  </button>
-                </div>
-
-                {/* tiny info */}
-                <div className="mt-3 text-center text-[10px] text-slate-400">
-                  {updatedLabel}
+                  {/* subtle overlay */}
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 transition group-hover:opacity-100" />
                 </div>
               </div>
+
+              {/* actions */}
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  disabled={!latest}
+                  onClick={() => latest && onScaleUp?.(latest)}
+                  className={cn(
+                    "inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2",
+                    "text-[11px] font-semibold transition",
+                    "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
+                    "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40",
+                    !latest && "opacity-60 cursor-not-allowed"
+                  )}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Scale Up
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!latest}
+                  onClick={() => latest && onEdit?.(latest)}
+                  className={cn(
+                    "inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2",
+                    "text-[11px] font-semibold transition",
+                    "border border-[#068773]/20 bg-[#068773]/10 text-[#068773]",
+                    "hover:bg-[#068773]/15",
+                    !latest && "opacity-60 cursor-not-allowed"
+                  )}
+                >
+                  <Pencil className="h-4 w-4" />
+                  Edit Result
+                </button>
+              </div>
+
+              <div className="mt-3 text-center text-[10px] text-slate-400 dark:text-slate-500">
+                {updatedLabel}
+              </div>
             </div>
-          )}
+          </div>
+        )}
+      </div>
+
+      {/* footer actions */}
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <Pill label={metaLeft} />
+          <Pill label={metaMid} />
         </div>
 
-        {/* Footer actions (like screenshot) */}
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
-            <Pill label={metaLeft} />
-            <Pill label={metaMid} />
-          </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            disabled={!latest}
+            onClick={() => latest && onSaveDraft?.(latest)}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-2xl border px-4 py-2",
+              "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
+              "text-[11px] font-semibold text-slate-700 dark:text-slate-200",
+              "hover:bg-slate-50 dark:hover:bg-slate-800/40",
+              !latest && "cursor-not-allowed opacity-60"
+            )}
+          >
+            Save Draft
+          </button>
 
-          <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={!latest}
+            onClick={() => latest && onExport?.(latest)}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-2xl px-4 py-2",
+              "text-[11px] font-semibold text-white transition",
+              "bg-gradient-to-r from-[#068773] to-[#0fb9a8] shadow-sm ring-1 ring-[#068773]/25",
+              "hover:brightness-105 active:brightness-95",
+              "focus:outline-none focus:ring-2 focus:ring-[#068773]/25",
+              !latest && "cursor-not-allowed opacity-60"
+            )}
+          >
+            <Upload className="h-4 w-4" />
+            Export
+          </button>
+
+          {latest && src && onDownload ? (
             <button
               type="button"
-              disabled={!latest}
-              onClick={() => latest && onSaveDraft?.(latest)}
+              onClick={() => onDownload(src, `result-${latest.id}.png`)}
               className={cn(
-                "inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2",
-                "text-[11px] font-semibold text-slate-700 transition hover:bg-slate-50",
-                !latest && "cursor-not-allowed opacity-60"
+                "hidden md:inline-flex items-center gap-2 rounded-2xl border px-3 py-2",
+                "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
+                "text-[11px] font-semibold text-slate-700 dark:text-slate-200",
+                "hover:bg-slate-50 dark:hover:bg-slate-800/40"
               )}
             >
-              Save as Draft
+              <Download className="h-4 w-4" />
+              Download
             </button>
-
-            <button
-              type="button"
-              disabled={!latest}
-              onClick={() => latest && onExport?.(latest)}
-              className={cn(
-                "inline-flex items-center gap-2 rounded-2xl px-4 py-2",
-                "text-[11px] font-semibold text-white transition",
-                "bg-gradient-to-r from-emerald-600 to-emerald-500 shadow-sm hover:-translate-y-0.5 hover:shadow-md",
-                "focus:outline-none focus:ring-2 focus:ring-emerald-600/25",
-                !latest && "cursor-not-allowed opacity-60 hover:translate-y-0 hover:shadow-sm"
-              )}
-            >
-              <Upload className="h-4 w-4" />
-              Export Result
-            </button>
-
-            {/* optional download shortcut */}
-            {latest && src && onDownload ? (
-              <button
-                type="button"
-                onClick={() => onDownload(src, `result-${latest.id}.png`)}
-                className={cn(
-                  "hidden md:inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2",
-                  "text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
-                )}
-                title="Download"
-              >
-                <Download className="h-4 w-4" />
-                Download
-              </button>
-            ) : null}
-          </div>
+          ) : null}
         </div>
       </div>
     </div>
-  );
-}
+  </div>
+);
 
 function Pill({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-semibold text-slate-600">
+    <span className="inline-flex items-center rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/60 px-3 py-2 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
       {label}
     </span>
   );
+}
 }

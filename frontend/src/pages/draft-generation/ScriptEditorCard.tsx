@@ -1,214 +1,219 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Loader2, Copy, Trash2 } from "lucide-react";
 
-function cn(...s: Array<string | undefined | false>) {
+function cn(...s: Array<string | undefined | false | null>) {
   return s.filter(Boolean).join(" ");
 }
 
 type Props = {
   title?: string;
-  defaultValue?: string; // html string
-  value?: string; // controlled html
-  onChange?: (html: string) => void;
-  onPolish?: (plainText: string) => void; // hook ke AI nanti
+  value?: string;
+  defaultValue?: string;
+  onChange?: (v: string) => void;
+  onPolish?: (plainText: string) => void;
+  isLoading?: boolean;
 };
-
-function htmlToText(html: string) {
-  const tmp = document.createElement("div");
-  tmp.innerHTML = html;
-  return tmp.innerText || "";
-}
 
 export default function ScriptEditorCard({
   title = "Storyline & Script",
-  defaultValue,
   value,
+  defaultValue,
   onChange,
   onPolish,
+  isLoading = false,
 }: Props) {
-  const editorRef = useRef<HTMLDivElement | null>(null);
-
   const initialHtml = useMemo(() => {
     if (value != null) return value;
     if (defaultValue) return defaultValue;
 
-    // fallback content
     return `
       <div>
-        <div style="color:#068773;font-weight:700;letter-spacing:.16em;font-size:11px;">[SLIDE 1: HOOK]</div>
-        <p style="margin-top:8px;font-style:italic;">
+        <div style="color:#068773;font-weight:800;letter-spacing:.18em;font-size:10px;text-transform:uppercase;">Slide 1 — Hook</div>
+        <p style="margin-top:8px;">
           Open with a high-energy shot of the Haka SUV navigating a winding coastal road at dawn.
-          The camera focuses on the sleek LED signature headlights.
-        </p>
-      </div>
-      <div style="margin-top:18px;">
-        <div style="color:#068773;font-weight:700;letter-spacing:.16em;font-size:11px;">[SLIDE 2: SAFETY SPECS]</div>
-        <p style="margin-top:8px;">
-          Narrator: “Safety isn't just a feature; it’s a foundation. With 12 active sensors and AI-assisted collision avoidance,
-          Haka keeps your family protected before you even know there’s a risk.”
-        </p>
-      </div>
-      <div style="margin-top:18px;">
-        <div style="color:#068773;font-weight:700;letter-spacing:.16em;font-size:11px;">[SLIDE 3: INTERIOR LUXURY]</div>
-        <p style="margin-top:8px;">
-          Transition to the interior. Focus on the vegan leather stitching and the 15-inch immersive display.
         </p>
       </div>
     `;
   }, [defaultValue, value]);
 
-  const [html, setHtml] = useState<string>(initialHtml);
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const [html, setHtml] = useState(initialHtml);
 
-  // If controlled `value` changes from parent, sync editor.
   useEffect(() => {
     if (value == null) return;
     setHtml(value);
-    if (editorRef.current && editorRef.current.innerHTML !== value) {
-      editorRef.current.innerHTML = value;
-    }
   }, [value]);
 
-  // on mount set innerHTML (for uncontrolled)
-  useEffect(() => {
-    if (!editorRef.current) return;
-    editorRef.current.innerHTML = html;
-  }, []);
-
-  function focusEditor() {
-    editorRef.current?.focus();
-  }
-
-  function exec(cmd: string, val?: string) {
-    focusEditor();
-    // eslint-disable-next-line deprecation/deprecation
-    document.execCommand(cmd, false, val);
-    // pull updated HTML
-    const next = editorRef.current?.innerHTML ?? "";
-    if (value == null) setHtml(next);
-    onChange?.(next);
+  function setBoth(v: string) {
+    if (value == null) setHtml(v);
+    onChange?.(v);
   }
 
   function handleInput() {
-    const next = editorRef.current?.innerHTML ?? "";
-    if (value == null) setHtml(next);
-    onChange?.(next);
+    if (isLoading) return;
+    if (!editorRef.current) return;
+    setBoth(editorRef.current.innerHTML);
   }
 
-  function onPolishClick() {
-    const current = editorRef.current?.innerHTML ?? html;
-    onPolish?.(htmlToText(current));
+  async function handleCopy() {
+    const plain = editorRef.current?.innerText || "";
+    if (!plain.trim()) return;
+    try {
+      await navigator.clipboard.writeText(plain);
+    } catch {
+      // ignore (browser permission)
+    }
+  }
+
+  function handleClear() {
+    if (isLoading) return;
+    setBoth(`<p></p>`);
+    if (editorRef.current) editorRef.current.innerHTML = `<p></p>`;
   }
 
   return (
-    <div className="">
-      {/* Title row */}
-      <div className="flex items-center gap-2 py-3 pt-5 text-sm font-semibold text-slate-900">
-        <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600/10 text-emerald-700">
+    <div>
+      {/* Title */}
+      <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold text-slate-900 dark:text-slate-50">
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-[#068773]/10 text-[#068773]">
           ▤
         </span>
         {title}
       </div>
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-[0_14px_40px_-26px_rgba(15,23,42,0.20)]">
-        {/* Toolbar row */}
-        <div className="mt-4 flex items-center justify-between border-b border-slate-100 px-4 py-3">
-            <div className="flex items-center gap-1">
-            <ToolbarButton label="Bold" onClick={() => exec("bold")}>
-                B
-            </ToolbarButton>
-            <ToolbarButton label="Italic" onClick={() => exec("italic")}>
-                <span className="italic">I</span>
-            </ToolbarButton>
-            <ToolbarButton label="Underline" onClick={() => exec("underline")}>
-                <span className="underline">U</span>
-            </ToolbarButton>
 
-            <div className="mx-2 h-4 w-px bg-slate-200" />
+      <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 shadow-sm">
+        {/* shimmer overlay */}
+        {isLoading && (
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-100/70 to-transparent dark:via-slate-800/50 animate-[shimmer_1.15s_infinite]" />
+          </div>
+        )}
 
-            <ToolbarButton label="Bullet list" onClick={() => exec("insertUnorderedList")}>
-                • List
-            </ToolbarButton>
-            <ToolbarButton label="Numbered list" onClick={() => exec("insertOrderedList")}>
-                1. List
-            </ToolbarButton>
+        {/* Toolbar */}
+        <div
+          className={cn(
+            "relative flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 px-4 py-3",
+            isLoading && "opacity-70"
+          )}
+        >
+          <div className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+            Editor
+          </div>
 
-            <div className="mx-2 h-4 w-px bg-slate-200" />
-
-            <ToolbarButton label="H2" onClick={() => exec("formatBlock", "h2")}>
-                H2
-            </ToolbarButton>
-            <ToolbarButton label="Paragraph" onClick={() => exec("formatBlock", "p")}>
-                P
-            </ToolbarButton>
-            </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={handleCopy}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold transition",
+                "border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-950",
+                "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50",
+                "focus:outline-none focus:ring-2 focus:ring-[#068773]/20",
+                isLoading && "cursor-not-allowed opacity-70"
+              )}
+              title="Copy text"
+            >
+              <Copy className="h-3.5 w-3.5" />
+              Copy
+            </button>
 
             <button
-            type="button"
-            onClick={onPolishClick}
-            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-600 to-emerald-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-emerald-600/25"
+              type="button"
+              disabled={isLoading}
+              onClick={handleClear}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold transition",
+                "border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-950",
+                "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50",
+                "focus:outline-none focus:ring-2 focus:ring-[#068773]/20",
+                isLoading && "cursor-not-allowed opacity-70"
+              )}
+              title="Clear editor"
             >
-            <Sparkles className="h-4 w-4" />
-            Polish with AI
+              <Trash2 className="h-3.5 w-3.5" />
+              Clear
             </button>
+
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={() => onPolish?.(editorRef.current?.innerText || "")}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm transition",
+                "focus:outline-none focus:ring-2 focus:ring-[#068773]/25",
+                isLoading
+                  ? "cursor-wait bg-[#068773]"
+                  : "bg-gradient-to-r from-[#068773] to-[#0fb9a8] hover:brightness-105 active:brightness-95"
+              )}
+              title="Polish with AI"
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              {isLoading ? "Generating…" : "Polish"}
+            </button>
+          </div>
         </div>
+
         {/* Editor */}
-        <div className="px-5 py-4">
-            <div
-            ref={editorRef}
-            contentEditable
-            suppressContentEditableWarning
-            onInput={handleInput}
-            className={cn(
-                "min-h-[260px] rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3",
-                "text-sm leading-relaxed text-slate-800 outline-none",
-                "focus:border-emerald-600/30 focus:bg-white focus:ring-2 focus:ring-emerald-600/10"
-            )}
-            />
-            <div className="mt-2 text-[11px] text-slate-500">
-            Tip: pilih teks lalu gunakan toolbar untuk format.
+        <div className="relative px-4 py-4">
+          {isLoading ? (
+            <div className="min-h-[240px] rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 p-4 space-y-3">
+              <div className="h-3.5 w-[92%] rounded-full bg-slate-100 dark:bg-slate-800" />
+              <div className="h-3.5 w-[78%] rounded-full bg-slate-100 dark:bg-slate-800" />
+              <div className="h-3.5 w-[70%] rounded-full bg-slate-100 dark:bg-slate-800" />
+              <div className="h-3.5 w-[86%] rounded-full bg-slate-100 dark:bg-slate-800" />
+              <div className="h-3.5 w-[62%] rounded-full bg-slate-100 dark:bg-slate-800" />
+              <div className="h-3.5 w-[74%] rounded-full bg-slate-100 dark:bg-slate-800" />
             </div>
+          ) : (
+            <div
+              ref={editorRef}
+              contentEditable
+              suppressContentEditableWarning
+              onInput={handleInput}
+              dangerouslySetInnerHTML={{ __html: html }}
+              className={cn(
+                // height & scroll
+                "min-h-[220px] max-h-[360px] overflow-y-auto",
+
+                // base
+                "rounded-2xl border px-4 py-3",
+                "border-slate-200/80 dark:border-slate-800/80",
+                "bg-slate-50 dark:bg-slate-950",
+
+                // text
+                "text-[13px] leading-relaxed text-slate-800 dark:text-slate-100",
+
+                // interaction
+                "outline-none transition",
+                "focus:border-[#068773]/35 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-[#068773]/15",
+
+                // scrollbar polish (optional but sexy)
+                "scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent"
+              )}
+            />
+
+          )}
+
+          <div className="mt-2 text-[10px] text-slate-500 dark:text-slate-400">
+            {isLoading
+              ? "AI is refining your storyline…"
+              : "Tip: paste hooks, then polish with AI for tone & clarity."}
+          </div>
         </div>
+
+        <style>{`
+          @keyframes shimmer {
+            0% { transform: translateX(-60%); opacity: .35; }
+            60% { opacity: .55; }
+            100% { transform: translateX(160%); opacity: .35; }
+          }
+        `}</style>
       </div>
-
-      
-
-      
     </div>
-  );
-}
-
-function ToolbarButton({
-  children,
-  onClick,
-  label,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  label: string;
-}) {
-  return (
-<button
-    type="button"
-    title={label}
-    onMouseDown={(e) => {
-        // prevent losing selection when clicking toolbar
-        e.preventDefault();
-    }}
-    onClick={onClick}
-    className="
-        inline-flex items-center justify-center
-        rounded-md
-        border border-transparent
-        px-1.5 py-0.5
-        text-[10px] font-medium
-        text-slate-500
-        transition
-        hover:border-slate-200
-        hover:bg-white
-        hover:text-slate-700
-    "
-    >
-    {children}
-    </button>
-
   );
 }

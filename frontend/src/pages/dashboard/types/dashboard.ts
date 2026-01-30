@@ -5,7 +5,7 @@ export type AgentCard = {
   title: string;
   desc: string;
   icon: React.ReactNode;
-  href?: string;
+  href: string;
   badge?: string;
   meta?: string;
 };

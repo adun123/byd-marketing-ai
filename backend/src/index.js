@@ -9,7 +9,7 @@ import swaggerDocument from "./config/swagger.js";
 import imageRoutes from "./routes/imageRoutes.js";
 import { checkGeminiHealth } from "./config/gemini.js";
 import trendRoutes from "./routes/trendsRoutes.js";
-import videoRoutes from "./routes/videoRoutes.js";
+// import videoRoutes from "./routes/videoRoutes.js";
 
 dotenv.config();
 
@@ -52,7 +52,7 @@ app.get("/health/gemini", async (req, res) => {
 
 app.use("/api/image", imageRoutes);
 app.use("/api/trends", trendRoutes);
-app.use("/api/video", videoRoutes); 
+// app.use("/api/video", videoRoutes); 
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 

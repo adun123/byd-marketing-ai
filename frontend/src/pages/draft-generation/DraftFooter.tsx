@@ -62,7 +62,7 @@ export default function DraftFooter({
             onClick={onFinalize}
             className={cn(
               "inline-flex items-center gap-2 rounded-xl px-6 py-3 text-xs font-semibold text-white",
-              "bg-gradient-to-r from-emerald-600 to-emerald-500 shadow-sm transition",
+              "bg-gradient-to-r from-[#068773] to-[#0fb9a8]",
               "hover:-translate-y-0.5 hover:shadow-md",
               "focus:outline-none focus:ring-2 focus:ring-emerald-600/30",
               disabled && "cursor-not-allowed opacity-60 hover:translate-y-0 hover:shadow-none"
