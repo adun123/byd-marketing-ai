@@ -81,6 +81,7 @@ export default function ImageTab({
   setAttachments,
   quality,
   model,
+  isGenerating
 }: Props)  {
 
  
@@ -140,6 +141,7 @@ const ready = isSideNavReady({ workflow, visualStyle, aspect, quality, model });
                 prompt={prompt}
                 onPromptChange={setPrompt}
                 onGenerate={() => onGenerate(prompt)}
+                 isGenerating={isGenerating}
                 attachments={attachments}
                 setAttachments={setAttachments}
               />
@@ -157,6 +159,7 @@ const ready = isSideNavReady({ workflow, visualStyle, aspect, quality, model });
         ) : (
           <OutputCanvasCard
             items={items}
+             isGenerating={isGenerating}
             onClear={handleClearCanvas}
             onScaleUp={(it) => console.log("scale up", it)}
             onEdit={(it) => console.log("edit", it)}

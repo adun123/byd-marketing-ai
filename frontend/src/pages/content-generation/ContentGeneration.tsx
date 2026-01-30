@@ -126,9 +126,17 @@ async function handleGenerate({ prompt }: { prompt: string }) {
         visualStyle,
         aspect,
       });
+      console.log("NEW ITEMS:", newItems);
+      console.log("TOTAL ITEMS BEFORE:", items.length);
+
     }
 
-    setItems((prev) => [...newItems, ...prev]);
+    setItems((prev) => {
+      const next = [...newItems, ...prev];
+      console.log("TOTAL ITEMS AFTER:", next.length);
+      return next;
+    });
+
   } catch (error) {
     const errorItem: GeneratedOutput = {
       id: crypto.randomUUID(),

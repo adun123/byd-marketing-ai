@@ -57,12 +57,15 @@ const canFinalize = Boolean(
 
 
 function handleFinalize() {
-  // prioritas: yang user edit terakhir (draftResult.visualPrompt)
-  const prompt =
-    draftResult.visualPrompt?.trim() ||
+  const finalScript = (draftResult.scriptHtml || "").trim();
+  const finalVisual = (draftResult.visualPrompt || "").trim();
+
+  const fallbackVisual =
     generated?.visualDescription?.photo?.prompt?.trim() ||
     generated?.visualDescription?.video?.prompt?.trim() ||
     "";
+
+  const prompt = finalVisual || fallbackVisual;
 
   if (!prompt) {
     console.warn("FinalizeContent: prompt kosong");
@@ -74,16 +77,17 @@ function handleFinalize() {
     draftId: generated?.draftId,
     topic: generated?.topic,
     imagePrompt: prompt,
+    scriptPreview: finalScript,
     style: generated?.visualDescription?.photo?.style,
     aspectRatio: generated?.visualDescription?.photo?.aspectRatio,
     brand: ctx?.form?.brand || undefined,
-     scriptPreview: draftResult.scriptHtml || "",
-
   };
 
   saveContentCtx(payload);
   navigate("/content-generator", { state: payload });
 }
+
+
 
 
 

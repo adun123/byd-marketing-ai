@@ -33,6 +33,8 @@ type Props = {
   // display meta (optional)
   metaLeft?: string;  // e.g. "1080 x 1080"
   metaMid?: string;   // e.g. "2.4 MB"
+
+  isGenerating?: boolean;
 };
 
 export default function OutputCanvasCard({
@@ -47,6 +49,7 @@ export default function OutputCanvasCard({
   onDownload,
   metaLeft = "1080 x 1080",
   metaMid = "—",
+  isGenerating = false,
 }: Props) {
   const latest = items?.[0];
   const src = latest?.imageUrl
@@ -131,6 +134,7 @@ return (
             <div className="w-full max-w-[520px]">
               <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_18px_48px_-28px_rgba(15,23,42,0.35)]">
                 <div className="relative aspect-square">
+                 <div className="relative aspect-square">
                   {src ? (
                     <img
                       src={src}
@@ -142,6 +146,23 @@ return (
                       Generated Preview
                     </div>
                   )}
+
+                  {/* 🔥 LOADING OVERLAY */}
+                  {isGenerating && (
+                    <div className="absolute inset-0 z-10 grid place-items-center bg-white/60 dark:bg-slate-950/60 backdrop-blur-sm">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-300 dark:border-slate-700 border-t-[#068773]" />
+                        <div className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">
+                          Generating…
+                        </div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                          Please wait a moment
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
 
                   {/* subtle overlay */}
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 transition group-hover:opacity-100" />

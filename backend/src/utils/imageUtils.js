@@ -23,8 +23,24 @@ export const getMimeType = (filePath) => {
   return mimeTypes[ext] || "image/jpeg";
 };
 
+// export const saveBase64Image = (base64Data, filename) => {
+//   const outputDir = path.join(__dirname, "../../outputs");
+//   if (!fs.existsSync(outputDir)) {
+//     fs.mkdirSync(outputDir, { recursive: true });
+//   }
+
+//   const filePath = path.join(outputDir, filename);
+//   const buffer = Buffer.from(base64Data, "base64");
+//   fs.writeFileSync(filePath, buffer);
+//   return filePath;
+// };
+//ganti ini dulu 
 export const saveBase64Image = (base64Data, filename) => {
-  const outputDir = path.join(__dirname, "../../outputs");
+  // backend/src/utils -> backend/outputs (naik 2 level)
+  const outputDir = process.env.VERCEL
+    ? "/tmp/outputs"
+    : path.resolve(__dirname, "../../outputs");
+
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }

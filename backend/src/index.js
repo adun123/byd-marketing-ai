@@ -108,5 +108,14 @@ if (!process.env.VERCEL) {
     console.log(`Video storage ready at http://localhost:${PORT}/videos/`);
   });
 }
+const outputsDir = process.env.VERCEL
+  ? "/tmp/outputs"
+  : path.resolve(__dirname, "../outputs"); // backend/src -> backend/outputs
+
+if (!fs.existsSync(outputsDir)) {
+  fs.mkdirSync(outputsDir, { recursive: true });
+}
+
+app.use("/outputs", express.static(outputsDir));
 
 export default app;
