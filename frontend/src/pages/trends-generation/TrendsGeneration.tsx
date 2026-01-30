@@ -330,19 +330,6 @@ async function onFetchSnapshot() {
 
     ]);
 
-  const raw = await snapRes.text();
-  if (!raw) throw new Error(`Empty response body (status ${snapRes.status})`);
-
-  let json: any;
-  try {
-    json = JSON.parse(raw);
-  } catch {
-    throw new Error(`Non-JSON response (status ${snapRes.status}): ${raw.slice(0, 120)}`);
-  }
-
-  if (!snapRes.ok) {
-    throw new Error(json?.error || `Request failed (status ${snapRes.status})`);
-  }
 
       
     const snapJson = await snapRes.json();
