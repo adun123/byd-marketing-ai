@@ -25,6 +25,10 @@ export default async function handler(req, res) {
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     return res.status(204).end();
   }
+  if (path === "/api/trends/search") {
+    return res.status(200).json({ hit: "router", method: req.method });
+    }
+
 
   // Router
   if (path === "/api" && req.method === "GET") return apiIndex(req, res);
