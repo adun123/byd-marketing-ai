@@ -27,6 +27,7 @@ export default function DraftResult({
   generated: GenerateContentResponse | null;
   isLoading?: boolean;
   error?: string | null;
+  onReset?: () => void;
 
   scriptHtml?: string;
   visualPrompt?: string;
@@ -86,6 +87,7 @@ useEffect(() => {
 }, [generated]);
 
 
+const hasGenerated = !!generated;
 
 
 return (
@@ -204,6 +206,23 @@ return (
     ) : null}
 
     {/* Script + Visual */}
+    {!hasGenerated && !isLoading ? (
+  <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 p-4 text-[12px] text-slate-600 dark:text-slate-300">
+      <div className="font-semibold text-slate-900 dark:text-slate-50">Script Editor</div>
+      <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+        Belum ada script. Klik <b>Generate Draft</b> di panel kiri.
+      </div>
+    </div>
+
+    <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 p-4 text-[12px] text-slate-600 dark:text-slate-300">
+      <div className="font-semibold text-slate-900 dark:text-slate-50">Visual Prompt</div>
+      <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+        Belum ada visual prompt. Klik <b>Generate Draft</b> di panel kiri.
+      </div>
+    </div>
+  </div>
+) : (
     <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div className="animate-[fadeUp_.18s_ease-out]">
         <ScriptEditorCard
@@ -222,6 +241,8 @@ return (
         />
       </div>
     </div>
+    )}
   </div>
+  
 );
 }

@@ -40,13 +40,7 @@ export default function Dashboard(){
           {/* Hero */}
           <div className="flex flex-col gap-7 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-2xl">
-              {/* Eyebrow pill */}
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-600/15 bg-emerald-600/10 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-800">
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600/15 text-emerald-700">
-                  ✦
-                </span>
-                Unified Content Engine
-              </div>
+           
 
               {/* Headline */}
               <h1 className="mt-5 text-[44px] font-extrabold leading-[0.95] tracking-[-0.04em] text-slate-900 sm:text-[64px]">
@@ -81,16 +75,28 @@ export default function Dashboard(){
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-white/80 transition group-hover:translate-x-0.5" />
                 </a>
 
-                <a
-                  href="/generator"
-                  className={cn(
-                    "inline-flex items-center justify-center rounded-2xl",
-                    "border border-slate-200/70 bg-white/70 px-6 py-3 text-sm font-semibold text-slate-900 backdrop-blur transition",
-                    "hover:bg-white hover:shadow-[0_14px_40px_-26px_rgba(15,23,42,0.35)]"
-                  )}
-                >
-                  Go to Generator
-                </a>
+            <a
+              href="/generator"
+              className={cn(
+                "group inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-300",
+
+                // default
+                "border border-slate-200/70 bg-white/70 text-slate-900 backdrop-blur shadow-sm",
+
+                // hover gradient + nonjol
+                "hover:bg-gradient-to-r hover:from-[#068773] hover:to-[#0fb9a8]",
+                "hover:text-white hover:border-transparent",
+                "hover:-translate-y-0.5 hover:shadow-md",
+
+                // focus ring
+                "focus:outline-none focus:ring-2 focus:ring-[#068773]/30"
+              )}
+            >
+              Go to Generator
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-current/80 transition group-hover:translate-x-0.5" />
+            </a>
+
+
               </div>
 
               {/* Stats */}
@@ -137,12 +143,7 @@ export default function Dashboard(){
                         “Why small brands go viral without spending on ads?”
                       </div>
 
-                      <div className="mt-2 flex items-center gap-3 text-[11px] text-slate-500">
-                        <span className="h-1 w-1 rounded-full bg-gradient-to-r from-[#068773] to-[#0fb9a8]" />
-                        <span>Proof-based</span>
-                        <span className="h-1 w-1 rounded-full bg-gradient-to-r from-[#068773] to-[#0fb9a8]" />
-                        <span>12.4k Engagement</span>
-                      </div>
+                      
                     </div>
 
                     {/* Visual Strategy */}
@@ -160,7 +161,7 @@ export default function Dashboard(){
 
                   {/* CTA */}
                   <a
-                    href="/generator"
+                    href="/draft-generator"
                     type="button"
                     className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#068773] to-[#0fb9a8] px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg"
                   >

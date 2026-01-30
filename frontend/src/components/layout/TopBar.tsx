@@ -20,14 +20,11 @@ export default function TopBar() {
         <div className="flex min-w-0 items-center gap-3">
           {/* Logo block */}
           <div className="flex min-w-0 items-center gap-3">
-            <div className="leading-none">
-              <div className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
-                HAKA
-              </div>
-              <div className="text-[10px] sm:text-xs font-semibold tracking-[0.25em] text-[#068773]">
-                AUTO
-              </div>
-            </div>
+            <img
+              src="/logo_haka.webp"
+              alt="HAKA Logo"
+              className="h-10 w-auto object-contain"
+            />
 
             <div className="hidden sm:block h-8 w-px bg-slate-200 dark:bg-slate-800" />
 

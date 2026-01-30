@@ -92,6 +92,7 @@ function handleFinalize() {
 
 
 async function handleGenerate() {
+   setDraftResult({ scriptHtml: "", visualPrompt: "" }); // ✅ reset dulu
   if (isGenerating) return; //  paling atas dulu
 
   if (!draftConfig) {
@@ -182,8 +183,9 @@ useEffect(() => {
 
 useEffect(() => {
   if (!generated) return;
+  if (genLoading) return;
   localStorage.setItem("byd:generated", JSON.stringify(generated));
-}, [generated]);
+}, [generated, genLoading]);
 
 
 
