@@ -1,13 +1,19 @@
+// api/index.js
 export default function handler(req, res) {
   res.status(200).json({
     name: "BYD Content Marketing AI API",
-    version: "1.0.0",
-    description: "AI-powered image generation and editing for content marketing",
+    version: "1.0.3",
+    description: "AI-powered content marketing API (Vercel serverless routes)",
     endpoints: {
       "GET /api": "API information",
       "GET /api/health": "Basic health check",
-      "GET /api/health/gemini": "Gemini API status",
-      "GET /api/docs": "API documentation",
+
+      // trends
+      "POST /api/trends/insights": "Generate Trend Snapshot (Gemini JSON)",
+      "POST /api/trends/search": "Search real-time viral trends",
+      "GET /api/trends/options": "Get available options",
+
+      // image (kalau memang kamu sudah punya filesnya di api/image/*)
       "POST /api/image/generate": "Generate image from text prompt",
       "POST /api/image/edit": "Edit image based on instructions",
       "POST /api/image/elements": "Add/remove elements from image",
@@ -16,7 +22,7 @@ export default function handler(req, res) {
       "POST /api/image/360-view": "Generate 360 view / multiple angles",
       "POST /api/image/upscale": "Upscale image resolution",
       "POST /api/image/chat": "Conversational image editing",
-      "POST /api/image/marketing": "Generate marketing content"
-    }
+      "POST /api/image/marketing": "Generate marketing content",
+    },
   });
 }

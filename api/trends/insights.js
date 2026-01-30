@@ -1,15 +1,10 @@
 // api/trends/insights.js
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-/**
- * Extract first valid JSON object from model output.
- * Model kadang nambah teks pembuka — ini bikin parsing aman.
- */
 function extractJson(text = "") {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start === -1 || end === -1 || end <= start) return null;
-
   const slice = text.slice(start, end + 1);
   try {
     return JSON.parse(slice);
@@ -103,18 +98,15 @@ Aturan:
 
 function getTextModel() {
   const key = process.env.GEMINI_API_KEY;
-  if (!key) {
-    throw new Error("Missing GEMINI_API_KEY");
-  }
+  if (!key) throw new Error("Missing GEMINI_API_KEY (set in Vercel env)");
   const genAI = new GoogleGenerativeAI(key);
 
-  // bisa ganti modelnya sesuai yang  pakai sebelumnya
-  return genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
+  // aman: kalau model ini nggak ada di project kamu, ganti ke model yang kamu pakai sebelumnya
+  return genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 }
 
 export default async function handler(req, res) {
-  // Optional: basic CORS (kalau frontend & backend satu domain, ini aman-aman aja)
+  // CORS (kalau FE & API domain sama, ini tetap aman)
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -149,15 +141,13 @@ export default async function handler(req, res) {
 
     const model = getTextModel();
     const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const text = (await result.response).text();
 
     const json = extractJson(text);
-
     if (!json) {
       return res.status(502).json({
         error: "Failed to parse AI JSON output",
-        raw: text,
+        raw: text?.slice(0, 2000),
       });
     }
 
