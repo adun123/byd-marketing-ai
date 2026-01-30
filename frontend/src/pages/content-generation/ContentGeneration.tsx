@@ -14,7 +14,7 @@ import { upscaleImageService } from "./services/upscaleImageService";
 import type { ContentGenTab } from "./SideNav";
 import type { GeneratedOutput, VideoAttachment, VideoOutput } from "./types";
 import { generateImageService } from "./services/imageService";
-import { downloadImage } from "./utils/download";
+
 import { cn } from "../../lib/cn";
 
 
@@ -168,14 +168,7 @@ async function handleGenerate({ prompt }: { prompt: string }) {
   }
   
 
-function addImages(files: FileList) {
-  const next = Array.from(files).map((file) => ({
-    id: crypto.randomUUID(),
-    file,
-    previewUrl: URL.createObjectURL(file),
-  }));
-  setAttachments((prev) => [...next, ...prev]);
-}
+
 
 function removeImage(id: string) {
   setAttachments((prev) => {
@@ -338,7 +331,7 @@ return (
                     setSourceMode={setSourceMode}
                     draftScriptPreview={draftScriptPreview}
                     draftVisualPrompt={draftVisualPrompt}
-                    onDownload={function (item: any): void {
+                    onDownload={function (): void {
                       throw new Error("Function not implemented.");
                     }}
                   />

@@ -9,8 +9,6 @@ import swaggerDocument from "./config/swagger.js";
 import imageRoutes from "./routes/imageRoutes.js";
 import { checkGeminiHealth } from "./config/gemini.js";
 import trendRoutes from "./routes/trendsRoutes.js";
-// import videoRoutes from "./routes/videoRoutes.js";
-
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);

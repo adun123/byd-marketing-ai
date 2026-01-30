@@ -51,14 +51,7 @@ export default function TrendsSnapshot({
   selectedTerms,
   onSelectedTermsChange,
 }: Props) {
-  const baseTerms = [
-    ...data.trendTopics.map((t) => t.title),
-    ...data.hookPatterns.map((h) => h.pattern),
-    ...data.anglePatterns.map((a) => a.angle),
-  ]
-    .filter(Boolean)
-    .slice(0, 10);
-
+  
   
   type Sentiment = "Positive" | "Negative" | "Neutral";
 

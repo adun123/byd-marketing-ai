@@ -238,30 +238,7 @@ function mapSearchTrendsToViralItems(
 
 
 
-function pickBestGroundingUri(
-  sources: Array<{ title?: string; uri?: string }> | undefined,
-  trend: { topic: string; keyTopic?: string },
-  idx: number
-) {
-  if (!sources?.length) return undefined;
 
-  const needle = (trend.keyTopic || trend.topic || "").toLowerCase();
-  const words = trend.topic.toLowerCase().split(/\s+/).filter(w => w.length >= 4);
-
-  // 1) match keyTopic/topic
-  const hit = sources.find(s => (s.title || "").toLowerCase().includes(needle));
-  if (hit?.uri) return hit.uri;
-
-  // 2) match salah satu kata penting dari topic
-  const hit2 = sources.find(s => {
-    const t = (s.title || "").toLowerCase();
-    return words.some(w => t.includes(w));
-  });
-  if (hit2?.uri) return hit2.uri;
-
-  // 3) fallback index
-  return sources[idx]?.uri || sources[0]?.uri;
-}
 
 
 function normalizePlatform(p?: string) {
