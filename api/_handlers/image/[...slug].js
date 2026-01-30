@@ -1,4 +1,4 @@
-module.exports = function handler(req, res) {
+export default function handler(req, res) {
   const slug = req.query.slug || [];
   const path = slug.join('/');
 
