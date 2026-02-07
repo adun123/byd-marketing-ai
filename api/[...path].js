@@ -30,9 +30,12 @@ export default async function handler(req, res) {
   if (path === "/api/health" && req.method === "GET") return health(req, res);
   if (path === "/api/health/gemini") return healthGemini(req, res);
 
-  // ✅ FIX: trends/search must be routed
+  // FIX: trends/search must be routed
   if (path === "/api/trends/search") return trendsSearch(req, res);
 
+  // edit-mask:
+  if (path.startsWith("/api/image/mask-edit")) return imageMaskEdit(req, res);
+ 
   if (path.startsWith("/api/trends/insights")) return trendsInsights(req, res);
   if (path.startsWith("/api/trends/options")) return trendsOptions(req, res);
   if (path.startsWith("/api/trends/generate-content")) return trendsGenerateContent(req, res);
