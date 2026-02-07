@@ -279,12 +279,14 @@ export default function TrendsGeneration() {
   const [snapshot, setSnapshot] = useState<TrendSnapshot | null>(null);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
 
-  const [selectedTerms, setSelectedTerms] = useState<string[]>([]);
+  
   const [searchTrends, setSearchTrends] = useState<SearchTrendsResponse | null>(null);
 
   const [viral, setViral] = useState<ViralSnippetItem[]>([]);
   const [viralLoading, setViralLoading] = useState(false);
 
+  const [selectedTerms, setSelectedTerms] = useState<string[]>([]);
+  const [selectionTouched, setSelectionTouched] = useState(false);
 
 
 
@@ -332,7 +334,8 @@ export default function TrendsGeneration() {
         terms: baseTerms,
         topSentiment: snap?.topSentiment?.length ? snap.topSentiment : fallbackSentiment,
       },
-      selectedTerms: selectedTerms.length ? selectedTerms : baseTerms.slice(0, 5),
+      selectedTerms: selectionTouched ? selectedTerms : [],
+
     };
   }
 
@@ -454,7 +457,10 @@ useEffect(() => {
   // ✅ restore juga hasil search biar ga perlu generate lagi
   if (saved.searchTrends) setSearchTrends(saved.searchTrends);
   if (saved.viral) setViral(saved.viral);
-  // if (saved.selectedTerms) setSelectedTerms(saved.selectedTerms);
+  // ✅ jangan restore pilihan term lama
+  setSelectedTerms([]);
+  setSelectionTouched(false);
+
 
   // ❌ jangan panggil onFetchSnapshot di sini
 }, []);
@@ -651,8 +657,12 @@ return (
               <TrendsSnapshot
                 data={snapshot}
                 searchTrends={searchTrends} // tambah ini
-                selectedTerms={selectedTerms}
-                onSelectedTermsChange={setSelectedTerms}
+                  selectedTerms={selectedTerms}
+                onSelectedTermsChange={(next) => {
+                  setSelectionTouched(true);
+                  setSelectedTerms(next);
+                }}
+                
                 onUseMessage={onUseMessage}
                 onAppendHint={onAppendHint}
               />

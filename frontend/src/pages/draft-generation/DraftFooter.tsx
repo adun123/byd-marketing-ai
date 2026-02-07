@@ -1,4 +1,4 @@
-import { Clock, Save, History, ArrowRight } from "lucide-react";
+import { Clock,  ArrowRight } from "lucide-react";
 
 function cn(...s: Array<string | undefined | false>) {
   return s.filter(Boolean).join(" ");
@@ -13,9 +13,9 @@ type Props = {
 };
 
 export default function DraftFooter({
-  lastSavedLabel = "Auto-saved at 14:42 PM",
-  onViewHistory,
-  onSaveDraft,
+  lastSavedLabel = "",
+  // onViewHistory,
+  // onSaveDraft,
   onFinalize,
   disabled,
 }: Props) {
@@ -35,7 +35,7 @@ export default function DraftFooter({
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-4 px-4">
         {/* LEFT ACTIONS */}
         <div className="flex items-center gap-2">
-          <button
+          {/* <button
             type="button"
             onClick={onViewHistory}
             className="
@@ -65,7 +65,7 @@ export default function DraftFooter({
           >
             <Save className="h-4 w-4" />
             Save Draft
-          </button>
+          </button> */}
         </div>
 
         {/* RIGHT STATUS + CTA */}

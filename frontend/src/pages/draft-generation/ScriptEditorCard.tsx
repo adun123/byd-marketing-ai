@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Sparkles,
-  Loader2,
+  
   Copy,
   Trash2,
   Bold,
   Italic,
   Underline,
-  List,
-  ListOrdered,
+
   Indent,
   Outdent,
   Smile,
@@ -40,7 +38,7 @@ export default function ScriptEditorCard({
   value,
   defaultValue,
   onChange,
-  onPolish,
+  // onPolish,
   isLoading = false,
 }: Props) {
  const initialHtml = useMemo(() => {
@@ -272,7 +270,7 @@ export default function ScriptEditorCard({
               </ToolBtn>
 
               <span className="mx-1 h-6 w-px bg-slate-200/80 dark:bg-slate-800/80" />
-
+{/* 
               <ToolBtn
                 title="Bulleted list"
                 active={cmd.ul}
@@ -289,7 +287,7 @@ export default function ScriptEditorCard({
                 onClick={() => exec("insertOrderedList")}
               >
                 <ListOrdered className="h-3.5 w-3.5" />
-              </ToolBtn>
+              </ToolBtn> */}
 
               <ToolBtn title="Indent" disabled={isLoading} onClick={() => exec("indent")}>
                 <Indent className="h-3.5 w-3.5" />
@@ -376,7 +374,7 @@ export default function ScriptEditorCard({
               Clear
             </button>
 
-            <button
+            {/* <button
               type="button"
               disabled={isLoading}
               onMouseDown={keepSelection}
@@ -396,7 +394,7 @@ export default function ScriptEditorCard({
                 <Sparkles className="h-4 w-4" />
               )}
               {isLoading ? "Generating…" : "Polish"}
-            </button>
+            </button> */}
           </div>
         </div>
 

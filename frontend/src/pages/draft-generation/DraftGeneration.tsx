@@ -284,7 +284,7 @@ return (
       </div>
     </main>
 
-    {/* ✅ Footer OUTSIDE container so it truly sticks */}
+    {/*  Footer OUTSIDE container so it truly sticks */}
     <DraftFooter
       onViewHistory={() => console.log("view history")}
       onSaveDraft={() => console.log("save draft")}

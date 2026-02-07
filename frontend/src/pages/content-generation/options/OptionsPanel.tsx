@@ -6,7 +6,8 @@ import OptionsStep3PromptInput from "./OptionsStep3PromptInput";
 
 import { cn } from "../../../lib/cn";
 
-export type Workflow = "text_to_image" | "image_to_image" | "upscale";
+export type Workflow = "text_to_image" | "image_to_image" | "upscale" ;
+
 export type VisualStyle = "clean" | "premium" | "lifestyle" | "ugc" | "bold";
 type Platform = "instagram" | "tiktok"  | "linkedin";
 

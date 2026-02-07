@@ -69,8 +69,8 @@ useEffect(() => {
     const html = slides
       .map(
         (s) =>
-          `<p><strong>[CAPTION ${s.slideNumber}: ${s.title}]</strong><br/>${s.content}</p>` +
-          (s.visualCue ? `<p><em>Visual:</em> ${s.visualCue}</p>` : "")
+          `<p><strong>[CAPTION ]</strong><br/>${s.content}</p>` +
+          (s.visualCue ? `<p><em></em> </p>` : "")
       )
       .join("");
 
@@ -85,7 +85,7 @@ useEffect(() => {
   if (!visualPrompt && p) onChangeVisual(p); // ke parent
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [generated]);
-
+const hasSelectedTerms = (draftCtx?.selectedTerms?.length ?? 0) > 0;
 
 const hasGenerated = !!generated;
 
@@ -114,7 +114,7 @@ return (
       <div className="text-[11px] text-slate-500 dark:text-slate-400">
         Source:{" "}
         <span className="font-semibold text-slate-700 dark:text-slate-200">
-          {draftCtx ? "Imported from Trend Insight" : "Manual / Empty"}
+         {hasSelectedTerms ? "Imported from Trend Insight" : "Manual / Empty"}
         </span>
       </div>
     </div>

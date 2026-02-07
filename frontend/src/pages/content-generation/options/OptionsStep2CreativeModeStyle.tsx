@@ -5,7 +5,8 @@ function cn(...s: Array<string | undefined | false>) {
   return s.filter(Boolean).join(" ");
 }
 
-type Workflow = "text_to_image" | "image_to_image" | "upscale";
+export type Workflow = "text_to_image" | "image_to_image" | "upscale" ;
+
 type VisualStyle = "clean" | "premium" | "lifestyle" | "ugc" | "bold";
 
 export type ImgAttachment = { id: string; file: File; previewUrl: string };

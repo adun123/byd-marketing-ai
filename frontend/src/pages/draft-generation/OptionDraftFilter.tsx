@@ -6,7 +6,7 @@ import TagInput from "../../components/ui/TagInput";
 import TargetAudienceSection from "./components/TargetAudienceSection";
 import ToneOfVoiceSection from "./components/ToneOfVoiceSection";
 import TargetKeywordsSection from "./components/TargetKeywordsSection";
-import SlideCountSection from "./components/SlideCountSection";
+// import SlideCountSection from "./components/SlideCountSection";
 import LanguageSection from "./components/LanguageSection";
 
 function cn(...s: Array<string | undefined | false>) {
@@ -40,13 +40,12 @@ type Props = {
 
 export default function OptionDraftFilter({ draftCtx = null, onChangeConfig, onGenerate, isGenerating = false,  }: Props) {
   const [sourceMode, setSourceMode] = useState<SourceMode>("trend");
-
+const hasSelectedTerms = (draftCtx?.selectedTerms?.length ?? 0) > 0;
   // --- terms dari trend insight (yang sudah dipilih) ---
   const initialTerms = useMemo(() => {
-    const selected = draftCtx?.selectedTerms?.length ? draftCtx.selectedTerms : null;
-    const fallback = draftCtx?.derived?.terms?.length ? draftCtx.derived.terms : [];
-    return (selected ?? fallback).slice(0, 12);
+    return (draftCtx?.selectedTerms ?? []).slice(0, 12);
   }, [draftCtx]);
+
 
   const [terms, setTerms] = useState<string[]>(initialTerms);
 
@@ -68,7 +67,7 @@ export default function OptionDraftFilter({ draftCtx = null, onChangeConfig, onG
   const [keywords, setKeywords] = useState("");
 
   // slide count
-  const [slides, setSlides] = useState(8);
+  const [slides] = useState(8);
   
   function humanizeTerm(term: string) {
     return term
@@ -92,10 +91,10 @@ export default function OptionDraftFilter({ draftCtx = null, onChangeConfig, onG
   // language (opsional tapi bagus buat API kamu)
   const [language, setLanguage] = useState<"id" | "en">("id");
 
-  useEffect(() => {
-  if (!terms.length && initialTerms.length) setTerms(initialTerms);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialTerms]);
+useEffect(() => {
+  setTerms(initialTerms);
+}, [initialTerms]);
+
 
   function toggleAudience(a: string) {
     setAudiences((prev) => (prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]));
@@ -170,21 +169,22 @@ export default function OptionDraftFilter({ draftCtx = null, onChangeConfig, onG
             </div>
           </div>
         </section>
+       
+
 
         {/* CONTEXT */}
         <section>
           {sourceMode === "trend" ? (
             <div className="rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-950 p-3">
-              {!draftCtx ? (
+              {!hasSelectedTerms ? (
                 <div className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
                   Tidak Ada Trend Insight yang Dimasukan.
                 </div>
               ) : (
-               <TagInput
+                <TagInput
                   label="Topic / Terms"
                   value={terms.map(humanizeTerm)}
                   onChange={(v) => {
-                    // balikin ke versi asli kalau user edit
                     setTerms(v.map(t => t.replace(/\s+/g, "")));
                   }}
                   placeholder="e.g. Range Anxiety"
@@ -226,7 +226,7 @@ export default function OptionDraftFilter({ draftCtx = null, onChangeConfig, onG
         <TargetKeywordsSection keywords={keywords} setKeywords={setKeywords} />
 
         {/* SLIDE COUNT */}
-        <SlideCountSection slides={slides} setSlides={setSlides} />
+        {/* <SlideCountSection slides={slides} setSlides={setSlides} /> */}
 
         {/* LANGUAGE */}
         <LanguageSection language={language} setLanguage={setLanguage} />

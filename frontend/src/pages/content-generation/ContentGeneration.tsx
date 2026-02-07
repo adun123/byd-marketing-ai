@@ -240,7 +240,7 @@ function handlePickImages(files: FileList) {
   const arr = Array.from(files);
   if (arr.length === 0) return;
 
-  const max = workflow === "image_to_image" ? 6 : 1;
+  const max = workflow === "image_to_image" ? 6 : 2;
   const picked = arr.slice(0, max);
 
   const next: ImgAttachment[] = picked.map((file) => ({
