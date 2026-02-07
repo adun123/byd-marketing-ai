@@ -6,8 +6,7 @@ export const dashboardCards: AgentCard[] = [
   {
     title: "Trend & Social Insight",
     badge: "Insight",
-    
-    desc: "Pantau konten yang lagi rame dan ambil insight: hook, angle, CTA, audiens, serta ide turunan yang siap dieksekusi.",
+    desc: "Pantau tren yang sedang berkembang dan dapatkan insight siap pakai: hook, angle, CTA, audiens, dan ide konten.",
     icon: <IconChart />,
     href: "/trends",
     ctaLabel: ""
@@ -15,8 +14,7 @@ export const dashboardCards: AgentCard[] = [
    {
     title: "Marketing Draft Generator",
     badge: "Draft",
-   
-    desc: "Buat draft konten marketing siap pakai mulai dari hook, caption, sampai CTA berdasarkan tujuan dan channel.",
+    desc: "Buat draft konten marketing siap pakai. Mulai dari hook, caption, hingga CTA berdasarkan tujuan kampanye dan channel yang dipilih.",
     icon: <IconSearch />,
     href: "/draft-generator",
     ctaLabel: ""
@@ -24,8 +22,7 @@ export const dashboardCards: AgentCard[] = [
   {
     title: "Content Generation",
     badge: "Content",
-   
-    desc: "Ubah insight jadi output siap pakai: caption, script pendek, hingga prompt AI untuk visual sesuai kebutuhan channel.",
+    desc: "Ubah insight menjadi konten siap tayang, seperti caption, script pendek, hingga prompt AI visual yang disesuaikan dengan tiap channel.",
     icon: <IconSparkles className="h-5 w-5 text-emerald-600" />,
     href: "content-generator",
     ctaLabel: ""
