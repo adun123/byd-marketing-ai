@@ -7,6 +7,7 @@ import MarketingDashboard from "./pages/marketing-dashboard/MarketingDashboard";
 
 import DraftGeneration from "./pages/draft-generation/DraftGeneration";
 import React from "react";
+import PreviewGeneration from "./pages/preview-generation/PreviewGeneration";
 
 export default function App() {
   React.useEffect(() => {
@@ -21,7 +22,7 @@ export default function App() {
           <Route path="/content-generator" element={<ContentGeneration />} />
           <Route path="/trends" element={<TrendsGeneration />} />
           <Route path="/draft-generator" element={<DraftGeneration />} />
-
+          <Route path="/preview-generator" element={<PreviewGeneration />} />
           <Route path="/marketing-dashboard" element={<MarketingDashboard />} />
           
       </Routes>
