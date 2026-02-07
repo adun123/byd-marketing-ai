@@ -60,6 +60,8 @@ export type FinalizeContentPayload = {
   style?: string;
   aspectRatio?: string;
   brand?: string;
+  // ✅ add
+  targetAudience?: string;
 };
 
 export type ImgAttachment = {
@@ -67,3 +69,5 @@ export type ImgAttachment = {
   file: File;
   previewUrl: string;
 };
+
+

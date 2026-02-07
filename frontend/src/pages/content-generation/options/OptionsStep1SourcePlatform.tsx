@@ -124,25 +124,17 @@ export default function OptionsStep1SourcePlatform({
             </div>
 
             <div className="grid grid-cols-3 gap-2">
-              <PlatformChip
-                active={platform === "instagram"}
-                label="Instagram"
-                icon={<Instagram className="h-4 w-4" />}
-                onClick={() => setPlatform("instagram")}
-              />
-              <PlatformChip
-                active={platform === "tiktok"}
-                label="TikTok"
-                icon={<Music2 className="h-4 w-4" />}
-                onClick={() => setPlatform("tiktok")}
-              />
-              <PlatformChip
-                active={platform === "linkedin"}
-                label="LinkedIn"
-                icon={<Linkedin className="h-4 w-4" />}
-                onClick={() => setPlatform("linkedin")}
-              />
+              {platforms.map((p) => (
+                <PlatformChip
+                  key={p.id}
+                  active={platform === p.id}
+                  label={p.label}
+                  icon={p.icon}
+                  onClick={() => setPlatform(p.id)}
+                />
+              ))}
             </div>
+
 
             {!onPlatformChange ? (
               <div className="mt-2 text-[10px] text-slate-500 dark:text-slate-400">
@@ -225,6 +217,12 @@ function ModeTab({
   );
 }
 
+const platforms: Array<{ id: Platform; label: string; icon: React.ReactNode }> = [
+  { id: "instagram", label: "Instagram", icon: <Instagram className="h-4 w-4" /> },
+  { id: "tiktok", label: "TikTok", icon: <Music2 className="h-4 w-4" /> },
+  { id: "linkedin", label: "LinkedIn", icon: <Linkedin className="h-4 w-4" /> },
+];
+
 function PlatformChip({
   active,
   label,
@@ -241,20 +239,19 @@ function PlatformChip({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex items-center justify-center gap-2 rounded-2xl border px-2.5 py-2 text-[11px] font-semibold transition",
-        "focus:outline-none focus:ring-2 focus:ring-[#068773]/25",
+        "inline-flex items-center justify-center gap-2 rounded-2xl border px-3 py-2",
+        "text-[11px] font-semibold transition",
         active
-          ? "border-[#068773]/25 bg-[#068773]/10 text-[#068773]"
-          : "border-slate-200/70 dark:border-slate-800/70 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+          ? "border-[#068773]/40 bg-[#068773]/10 text-[#068773]"
+          : "border-slate-200/70 dark:border-slate-800/70 bg-white/60 dark:bg-slate-900/40 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40"
       )}
     >
-      <span className={cn("opacity-90", active ? "text-[#068773]" : "text-slate-500")}>
-        {icon}
-      </span>
+      <span className={cn("opacity-90", active ? "text-[#068773]" : "")}>{icon}</span>
       {label}
     </button>
   );
 }
+
 
 function AspectChip({
   active,

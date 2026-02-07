@@ -3,6 +3,7 @@ import * as React from "react";
 import { Download, Pencil, Sparkles, Trash2, } from "lucide-react";
 import type { GeneratedOutput } from "./types";
 import MaskEditor from "./MaskEditor";
+import { downloadAllImagesZip } from "./utils/downloadAll";
 
 
 
@@ -583,71 +584,123 @@ async function handleSubmitEdit(target: GeneratedOutput) {
               )
             ) : (
             <div className="flex flex-col items-center">
-              <div className="w-full max-w-[520px]">
-                <div className="overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_18px_48px_-28px_rgba(15,23,42,0.35)]">
-                  {/* IMAGE + HOVER ACTIONS */}
-                  <div className={cn("relative w-full group bg-black/5", aspectClass(aspect))}>
-                    {src ? (
-                        <div className={cn("relative w-full group overflow-hidden bg-slate-100 dark:bg-slate-950", aspectClass(aspect))}>
-                          <img
-                            key={selected?.id}
-                            src={selectedSrc}
-                            alt="Generated"
-                            className="absolute inset-0 h-full w-full object-cover"
-                            draggable={false}
-                          />
+              {/* === CANVAS WRAP (lebih compact & corporate) === */}
+              <div className="w-full max-w-[440px] md:max-w-[480px]">
+                <div
+                  className={cn(
+                    "overflow-hidden rounded-2xl",
+                    "border border-slate-200/70 dark:border-slate-800/70",
+                    "bg-white dark:bg-slate-900",
+                    "shadow-sm" // ✅ jauh lebih enterprise daripada shadow gede
+                  )}
+                >
+                  {/* Top bar kecil (branding/enterprise feel) */}
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200/60 dark:border-slate-800/60">
+                    <div className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">
+                      Output Preview
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {items.length > 0 ? `${items.length} frame` : "No output"}
+                    </div>
+                  </div>
 
-                        </div>
+                  {/* IMAGE */}
+                  <div className={cn("relative w-full group bg-slate-50 dark:bg-slate-950", aspectClass(aspect))}>
+                    {src ? (
+                      <div className={cn("relative w-full overflow-hidden bg-slate-100 dark:bg-slate-950", aspectClass(aspect))}>
+                        <img
+                          key={selected?.id}
+                          src={selectedSrc}
+                          alt="Generated"
+                          className="absolute inset-0 h-full w-full object-cover"
+                          draggable={false}
+                        />
+                      </div>
                     ) : (
-                      <div className="absolute inset-0 grid place-items-center text-[11px] text-slate-400">
-                        Generated Preview
+                      <div className="absolute inset-0 grid place-items-center">
+                        <div className="rounded-xl border border-slate-200/70 dark:border-slate-800/70 bg-white/80 dark:bg-slate-900/60 px-3 py-2 text-[11px] text-slate-500 dark:text-slate-400">
+                          Generated Preview
+                        </div>
                       </div>
                     )}
 
-                    {/* Hover pencil button */}
-                    {selectedSrc  && selected  ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMaskPrompt("Hapus objek yang di-mask, isi background tetap natural dan realistis.");
-                          setIsMasking(true);
-                          setSelectedId(selected.id);
-                        }}
+                    {/* Hover actions (Mask + Download) */}
+                    {selectedSrc && selected ? (
+                      <div
                         className={cn(
-                          "absolute right-3 top-3 z-20",
-                          "opacity-0 group-hover:opacity-100 transition",
-                          "inline-flex items-center gap-2 rounded-2xl px-3 py-2",
-                          "border border-slate-200/70 dark:border-slate-800/70",
-                          "bg-white/85 dark:bg-slate-950/70 backdrop-blur",
-                          "text-[11px] font-semibold text-slate-700 dark:text-slate-200",
-                          "hover:bg-white dark:hover:bg-slate-900"
+                          "absolute right-2 top-2 z-20 flex items-center gap-1.5",
+                          "opacity-0 group-hover:opacity-100 transition"
                         )}
-                        title="Mask edit (hapus bagian tertentu)"
                       >
-                        <Pencil className="h-4 w-4" />
-                        Mask
-                      </button>
-                    ) : null}
-                  </div>
+                        {/* Mask */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMaskPrompt("Hapus objek yang di-mask, isi background tetap natural dan realistis.");
+                            setIsMasking(true);
+                            setSelectedId(selected.id);
+                          }}
+                          className={cn(
+                            "inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5",
+                            "border border-slate-200/70 dark:border-slate-800/70",
+                            "bg-white/90 dark:bg-slate-950/70 backdrop-blur",
+                            "text-[11px] font-semibold text-slate-700 dark:text-slate-200",
+                            "hover:bg-white dark:hover:bg-slate-900"
+                          )}
+                          title="Mask edit"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          Mask
+                        </button>
 
+                        {/* Download */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            downloadImage(selectedSrc, `result-${selected.id}.png`)
+                          }
+                          className={cn(
+                            "inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5",
+                            "border border-slate-200/70 dark:border-slate-800/70",
+                            "bg-white/90 dark:bg-slate-950/70 backdrop-blur",
+                            "text-[11px] font-semibold text-slate-700 dark:text-slate-200",
+                            "hover:bg-white dark:hover:bg-slate-900"
+                          )}
+                          title="Download image"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          Save
+                        </button>
+                      </div>
+                    ) : null}
+
+                  </div>
                 </div>
-                {/* THUMBNAILS (Carousel) */}
+
+                {/* === CAROUSEL (filmstrip enterprise) === */}
                 {items.length > 1 ? (
                   <div className="mt-3">
                     <div className="mb-2 flex items-center justify-between">
-                      <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-                        Slides
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                        Frames
                       </div>
                       <div className="text-[10px] text-slate-400 dark:text-slate-500">
-                        {items.length} images
+                        Click to preview
                       </div>
                     </div>
 
-                    <div className="flex gap-2 overflow-x-auto pb-2">
+                    <div
+                      className={cn(
+                        "flex gap-2 overflow-x-auto pb-2",
+                        "[&::-webkit-scrollbar]:h-1.5",
+                        "[&::-webkit-scrollbar-thumb]:rounded-full",
+                        "[&::-webkit-scrollbar-thumb]:bg-slate-200/70",
+                        "dark:[&::-webkit-scrollbar-thumb]:bg-slate-800/70"
+                      )}
+                    >
                       {items.map((it, idx) => {
                         const tSrc =
-                          it.imageUrl ||
-                          (it.base64 ? `data:image/png;base64,${it.base64}` : undefined);
+                          it.imageUrl || (it.base64 ? `data:image/png;base64,${it.base64}` : undefined);
 
                         const active = it.id === selected?.id;
 
@@ -657,18 +710,18 @@ async function handleSubmitEdit(target: GeneratedOutput) {
                             type="button"
                             onClick={() => setSelectedId(it.id)}
                             className={cn(
-                              "relative shrink-0 overflow-hidden rounded-2xl border",
-                              "h-20 w-20 md:h-24 md:w-24",
+                              "relative shrink-0 overflow-hidden rounded-xl border",
+                              "h-16 w-16 md:h-[72px] md:w-[72px]", // ✅ lebih kecil
                               active
-                                ? "border-[#068773]/40 ring-2 ring-[#068773]/25"
+                                ? "border-[#068773]/50 ring-2 ring-[#068773]/20"
                                 : "border-slate-200/70 dark:border-slate-800/70 hover:brightness-95"
                             )}
-                            title={`Slide ${idx + 1}`}
+                            title={`Frame ${idx + 1}`}
                           >
                             {tSrc ? (
                               <img
                                 src={tSrc}
-                                alt={`Slide ${idx + 1}`}
+                                alt={`Frame ${idx + 1}`}
                                 className="h-full w-full object-cover"
                                 draggable={false}
                               />
@@ -678,7 +731,14 @@ async function handleSubmitEdit(target: GeneratedOutput) {
                               </div>
                             )}
 
-                            <div className="absolute bottom-1 right-1 rounded-full bg-black/60 px-2 py-0.5 text-[9px] font-bold text-white">
+                            {/* badge lebih corporate */}
+                            <div
+                              className={cn(
+                                "absolute bottom-1 right-1 rounded-md px-1.5 py-0.5",
+                                active ? "bg-[#068773] text-white" : "bg-slate-900/60 text-white"
+                              )}
+                              style={{ fontSize: 9, fontWeight: 700 }}
+                            >
                               {idx + 1}
                             </div>
                           </button>
@@ -862,21 +922,29 @@ async function handleSubmitEdit(target: GeneratedOutput) {
               Save Draft
             </button>
 
-            {selected && selectedSrc ? (
-              <button
-                type="button"
-                onClick={() => downloadImage(selectedSrc, `result-${selected.id}.png`)}
-                className={cn(
-                  "hidden md:inline-flex items-center gap-2 rounded-2xl border px-3 py-2",
-                  "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
-                  "text-[11px] font-semibold text-slate-700 dark:text-slate-200",
-                  "hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                )}
-              >
-                <Download className="h-4 w-4" />
-                Download
-              </button>
-            ) : null}
+            <button
+              type="button"
+              disabled={items.length === 0}
+              onClick={async () => {
+                try {
+                  await downloadAllImagesZip(items, "byd-results.zip");
+                } catch (e) {
+                  console.error(e);
+                  alert("Gagal membuat ZIP. Cek console (kemungkinan CORS kalau URL eksternal).");
+                }
+              }}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-xl border px-3 py-2",
+                "border-slate-200/70 dark:border-slate-800/70 bg-white dark:bg-slate-900",
+                "text-[11px] font-semibold text-slate-700 dark:text-slate-200",
+                "hover:bg-slate-50 dark:hover:bg-slate-800/40",
+                "disabled:opacity-50 disabled:cursor-not-allowed"
+              )}
+            >
+              <Download className="h-4 w-4" />
+              Download all (ZIP)
+            </button>
+
 
 
           </div>

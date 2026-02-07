@@ -1,5 +1,5 @@
 // src/pages/content-generation/OptionsPanel.tsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import OptionsStep1SourcePlatform, { type SourceMode } from "./OptionsStep1SourcePlatform";
 import OptionsStep2CreativeModeStyle from "./OptionsStep2CreativeModeStyle";
 import OptionsStep3PromptInput from "./OptionsStep3PromptInput";
@@ -8,10 +8,15 @@ import { cn } from "../../../lib/cn";
 
 export type Workflow = "text_to_image" | "image_to_image" | "upscale";
 export type VisualStyle = "clean" | "premium" | "lifestyle" | "ugc" | "bold";
+type Platform = "instagram" | "tiktok"  | "linkedin";
 
 export type ImgAttachment = { id: string; file: File; previewUrl: string };
 
 type Props = {
+
+  platform: Platform;
+  onPlatformChange: (p: Platform) => void;
+
   workflow: Workflow;
   visualStyle: VisualStyle;
   aspect: "1:1" | "4:5" | "16:9" | "9:16";
@@ -50,9 +55,10 @@ export default function OptionsPanel({
   attachments,
   setAttachments,
   isGenerating = false,
+  platform,
+  onPlatformChange,
 }: Props) {
-  const [platform, setPlatform] = useState<"instagram" | "tiktok" | "linkedin">("instagram");
-
+  
   const handlePickImages = (files: FileList) => {
     const arr = Array.from(files);
     if (arr.length === 0) return;
@@ -151,7 +157,8 @@ export default function OptionsPanel({
         }}
         scriptPreview={sourceMode === "draft" ? previewText : "Manual mode."}
         platform={platform}
-        onPlatformChange={setPlatform}
+        onPlatformChange={onPlatformChange}
+
       />
 
       <OptionsStep2CreativeModeStyle

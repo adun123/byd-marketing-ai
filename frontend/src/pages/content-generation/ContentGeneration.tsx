@@ -18,12 +18,42 @@ import { generateImageService } from "./services/imageService";
 import { cn } from "../../lib/cn";
 import ComingSoonPage from "../ComingSoonPage";
 
-
+import { saveContentPreviewMeta } from "./utils/contentPreviewMetaStorage";
 type ImgAttachment = {
   id: string;
   file: File;
   previewUrl: string;
 };
+
+const LS_KEY_ITEMS = "cg.canvas.items.v1";
+
+function safeParse<T>(raw: string | null): T | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+function persistableItems(items: GeneratedOutput[]) {
+  return items.map((it) => ({
+    id: it.id,
+    prompt: it.prompt,
+    createdAt: it.createdAt,
+
+    // ✅ simpan base64 kalau ada (paling aman)
+    base64: it.base64,
+
+    // ✅ simpan imageUrl HANYA kalau absolut
+    imageUrl:
+      it.imageUrl && it.imageUrl.startsWith("http")
+        ? it.imageUrl
+        : undefined,
+  }));
+}
+
+
 
 
 
@@ -39,7 +69,11 @@ export default function ContentGeneration() {
   const [prompt, setPrompt] = useState("");
   const [attachments, setAttachments] = useState<ImgAttachment[]>([]);
 
-  const [items, setItems] = useState<GeneratedOutput[]>([]);
+  const [items, setItems] = useState<GeneratedOutput[]>(() => {
+    const saved = safeParse<GeneratedOutput[]>(localStorage.getItem(LS_KEY_ITEMS));
+    return Array.isArray(saved) ? saved : [];
+  });
+
   const [tab, setTab] = useState<ContentGenTab>("image");
   const API_BASE = (import.meta.env.VITE_API_BASE?.trim() || "/api") as string;
   // sidebar preference
@@ -47,6 +81,8 @@ export default function ContentGeneration() {
 
 
   const location = useLocation();
+  const [platform, setPlatform] = useState<"instagram" | "tiktok" | "linkedin">("instagram");
+
 
   // NEW
 const [sourceMode, setSourceMode] = useState<SourceMode>("manual");
@@ -90,7 +126,7 @@ useEffect(() => {
   //   useState<"cinematic" | "clean" | "ugc" | "bold">("cinematic");
   // const [videoFps, setVideoFps] = useState<24 | 30>(24);
   const [imageCategory, setImageCategory] = useState<"infographic" | "carousel">("infographic");
-const [slides, setSlides] = useState(5);
+  const [slides, setSlides] = useState(5);
 
 
 async function handleGenerate({ prompt }: { prompt: string }) {
@@ -158,8 +194,6 @@ async function handleGenerate({ prompt }: { prompt: string }) {
     setIsGenerating(false);
   }
 }
-
-
 
 
   // function handleGenerateVideo({ prompt }: { prompt: string }) {
@@ -238,6 +272,27 @@ function isContentReady(params: {
   const { workflow, visualStyle, aspect, quality, model } = params;
   return Boolean(workflow && visualStyle && aspect && quality && model);
 }
+
+useEffect(() => {
+  try {
+    localStorage.setItem(
+      LS_KEY_ITEMS,
+      JSON.stringify(persistableItems(items))
+    );
+  } catch (e) {
+    console.error("Failed to persist canvas items", e);
+  }
+}, [items]);
+
+
+useEffect(() => {
+  saveContentPreviewMeta({
+    aspect,
+    format: imageCategory,
+    slides,
+    platform,
+  });
+}, [aspect, imageCategory, slides, platform]);
 
 
 return (
@@ -334,6 +389,8 @@ return (
                    API_BASE={API_BASE}
                     workflow={workflow}
                     setWorkflow={setWorkflow}
+                     platform={platform}
+                    setPlatform={setPlatform}
                     visualStyle={visualStyle}
                     setVisualStyle={setVisualStyle}
                     aspect={aspect}
