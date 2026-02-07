@@ -7,15 +7,16 @@ import ImageTab from "./tabs/ImageTab";
 import TopBarGenerate from "../../components/layout/TopBarGenerate";
 
 import SideNav from "./SideNav";
-import VideoTab from "./tabs/VideoTab";
+// import VideoTab from "./tabs/VideoTab";
 import type { Workflow, VisualStyle } from "./options/OptionsPanel";
 import { upscaleImageService } from "./services/upscaleImageService";
 
 import type { ContentGenTab } from "./SideNav";
-import type { GeneratedOutput, VideoAttachment, VideoOutput } from "./types";
+import type { GeneratedOutput,  } from "./types";
 import { generateImageService } from "./services/imageService";
 
 import { cn } from "../../lib/cn";
+import ComingSoonPage from "../ComingSoonPage";
 
 
 type ImgAttachment = {
@@ -23,6 +24,7 @@ type ImgAttachment = {
   file: File;
   previewUrl: string;
 };
+
 
 
 
@@ -75,26 +77,30 @@ useEffect(() => {
   }, [sidebarOpen]);
 
   // --- VIDEO STATE (masih mock di page dulu) ---
-  const [videoPrompt, setVideoPrompt] = useState("");
-  const [videoAttachments, setVideoAttachments] = useState<VideoAttachment[]>([]);
-  const [videoItems, setVideoItems] = useState<VideoOutput[]>([]);
-  const [videoWorkflow, setVideoWorkflow] =
-    useState<"text_to_video" | "image_to_video">("text_to_video");
+  // const [videoPrompt, setVideoPrompt] = useState("");
+  // const [videoAttachments, setVideoAttachments] = useState<VideoAttachment[]>([]);
+  // const [, setVideoItems] = useState<VideoOutput[]>([]);
+  // const [videoWorkflow, setVideoWorkflow] =
+  //   useState<"text_to_video" | "image_to_video">("text_to_video");
 
-  const [videoFormat, setVideoFormat] =
-    useState<"reels" | "tiktok" | "yt_shorts" | "landscape">("reels");
-  const [videoDurationSec, setVideoDurationSec] = useState<5 | 8 | 10 | 15>(8);
-  const [videoStyle, setVideoStyle] =
-    useState<"cinematic" | "clean" | "ugc" | "bold">("cinematic");
-  const [videoFps, setVideoFps] = useState<24 | 30>(24);
+  // const [videoFormat, setVideoFormat] =
+  //   useState<"reels" | "tiktok" | "yt_shorts" | "landscape">("reels");
+  // const [videoDurationSec, setVideoDurationSec] = useState<5 | 8 | 10 | 15>(8);
+  // const [videoStyle, setVideoStyle] =
+  //   useState<"cinematic" | "clean" | "ugc" | "bold">("cinematic");
+  // const [videoFps, setVideoFps] = useState<24 | 30>(24);
+  const [imageCategory, setImageCategory] = useState<"infographic" | "carousel">("infographic");
+const [slides, setSlides] = useState(5);
+
 
 async function handleGenerate({ prompt }: { prompt: string }) {
   const hasImage = attachments.length > 0;
+  const cleanPrompt = prompt.trim();
 
-  if (workflow === "text_to_image" && prompt.trim().length < 2) return;
+  if (workflow === "text_to_image" && cleanPrompt.length < 2) return;
 
   if (workflow === "image_to_image") {
-    if (prompt.trim().length < 2) return;
+    if (cleanPrompt.length < 2) return;
     if (!hasImage) return;
   }
 
@@ -107,9 +113,8 @@ async function handleGenerate({ prompt }: { prompt: string }) {
     let newItems: GeneratedOutput[] = [];
 
     if (workflow === "upscale") {
-      // 🔥 AMBIL FILE DARI ATTACHMENTS
       const first = attachments[0];
-      const file: File = first.file; // ⬅INI KUNCI
+      const file: File = first.file;
 
       newItems = await upscaleImageService({
         API_BASE,
@@ -118,17 +123,21 @@ async function handleGenerate({ prompt }: { prompt: string }) {
         quality: 95,
       });
     } else {
+      const isCarousel =
+        tab === "image" && imageCategory === "carousel" && workflow === "text_to_image";
+
       newItems = await generateImageService({
         API_BASE,
         workflow,
-        prompt: prompt.trim(),
+        prompt: cleanPrompt,
         attachments,
         visualStyle,
         aspect,
+        numberOfResults: isCarousel ? slides : 1, // ✅ kunci carousel
       });
-      console.log("NEW ITEMS:", newItems);
-      console.log("TOTAL ITEMS BEFORE:", items.length);
 
+      console.log("GEN RESULT COUNT:", newItems.length);
+      console.log("TOTAL ITEMS BEFORE:", items.length);
     }
 
     setItems((prev) => {
@@ -136,7 +145,6 @@ async function handleGenerate({ prompt }: { prompt: string }) {
       console.log("TOTAL ITEMS AFTER:", next.length);
       return next;
     });
-
   } catch (error) {
     const errorItem: GeneratedOutput = {
       id: crypto.randomUUID(),
@@ -153,27 +161,28 @@ async function handleGenerate({ prompt }: { prompt: string }) {
 
 
 
-  function handleGenerateVideo({ prompt }: { prompt: string }) {
-    if (videoWorkflow === "text_to_video" && prompt.trim().length < 2) return;
-    if (videoWorkflow === "image_to_video" && videoAttachments.length === 0) return;
 
-    setIsGenerating(true);
+  // function handleGenerateVideo({ prompt }: { prompt: string }) {
+  //   if (videoWorkflow === "text_to_video" && prompt.trim().length < 2) return;
+  //   if (videoWorkflow === "image_to_video" && videoAttachments.length === 0) return;
 
-    const id = crypto.randomUUID();
-    setVideoItems((prev) => [
-      { id, prompt: prompt.trim() || "(no prompt)", createdAt: Date.now(), status: "processing" },
-      ...prev,
-    ]);
+  //   setIsGenerating(true);
 
-    setTimeout(() => {
-      setVideoItems((prev) =>
-        prev.map((it) =>
-          it.id === id ? { ...it, status: "done", videoUrl: undefined } : it
-        )
-      );
-      setIsGenerating(false);
-    }, 1000);
-  }
+  //   const id = crypto.randomUUID();
+  //   setVideoItems((prev) => [
+  //     { id, prompt: prompt.trim() || "(no prompt)", createdAt: Date.now(), status: "processing" },
+  //     ...prev,
+  //   ]);
+
+  //   setTimeout(() => {
+  //     setVideoItems((prev) =>
+  //       prev.map((it) =>
+  //         it.id === id ? { ...it, status: "done", videoUrl: undefined } : it
+  //       )
+  //     );
+  //     setIsGenerating(false);
+  //   }, 1000);
+  // }
   
 
 
@@ -251,7 +260,15 @@ return (
           {/* LEFT: SideNav / Config */}
           <aside className="lg:sticky lg:top-[72px] lg:self-start">
             <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-4 shadow-sm">
-              <SideNav value={tab} onSelect={setTab} />
+             <SideNav
+                value={tab}
+                onSelect={setTab}
+                imageCategory={imageCategory}
+                onImageCategoryChange={setImageCategory}
+                slides={slides}
+                onSlidesChange={setSlides}
+              />
+
             </div>
 
             <div className="mt-3 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-white/70 dark:bg-slate-900/40 p-3 text-[11px] text-slate-600 dark:text-slate-300 lg:hidden">
@@ -262,7 +279,7 @@ return (
           {/* RIGHT: Workspace */}
           <section className="min-w-0">
             <div className="relative rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 shadow-sm">
-              {/* ✅ gating */}
+              {/* gating */}
               {(() => {
                 const ready = isContentReady({
                   workflow,
@@ -314,6 +331,7 @@ return (
               <div className="">
                 {tab === "image" ? (
                   <ImageTab
+                   API_BASE={API_BASE}
                     workflow={workflow}
                     setWorkflow={setWorkflow}
                     visualStyle={visualStyle}
@@ -344,35 +362,7 @@ return (
                     }}
                   />
                 ) : (
-                  <VideoTab
-                    videoWorkflow={videoWorkflow}
-                    setVideoWorkflow={setVideoWorkflow}
-                    videoFormat={videoFormat}
-                    setVideoFormat={setVideoFormat}
-                    videoDurationSec={videoDurationSec}
-                    setVideoDurationSec={setVideoDurationSec}
-                    videoStyle={videoStyle}
-                    setVideoStyle={setVideoStyle}
-                    videoFps={videoFps}
-                    setVideoFps={setVideoFps}
-                    videoPrompt={videoPrompt}
-                    setVideoPrompt={setVideoPrompt}
-                    videoAttachments={videoAttachments}
-                    setVideoAttachments={setVideoAttachments}
-                    videoItems={videoItems}
-                    isGenerating={isGenerating}
-                    onGenerate={(p) => handleGenerateVideo({ prompt: p })}
-                    onDownloadVideo={(it) => {
-                      if (!it.videoUrl) return;
-                      const a = document.createElement("a");
-                      a.href = it.videoUrl;
-                      a.download = `video-${it.id}.mp4`;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                    }}
-                    onSelectVideo={(it) => console.log("select video", it.id)}
-                  />
+                 <ComingSoonPage title={""} desc={""}/>
                 )}
               </div>
             </div>
