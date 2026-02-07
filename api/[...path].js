@@ -12,6 +12,7 @@ import trendsGenerateContent from "./_handlers/trends/generate-content.js";
 import imageGenerate from "./_handlers/image/generate.js";
 import imageEdit from "./_handlers/image/edit.js";
 import imageMarketing from "./_handlers/image/marketing.js";
+import imageMaskEdit from "./_handlers/image/mask-edit.js";
 
 export default async function handler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
