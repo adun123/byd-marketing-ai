@@ -5,6 +5,7 @@ import TopBarGenerate from "../../components/layout/TopBarGenerate";
 import DraftResult from "./DraftResult";
 import OptionDraftFilter from "./OptionDraftFilter";
 import DraftFooter from "./DraftFooter";
+import { savePreviewContext } from "../preview-generation/utils/previewContextStorage"; // sesuaikan path
 
 import type { DraftContextPayload } from "../trends-generation/types";
 import { loadDraftContext } from "../trends-generation/utils/draftContextStorage";
@@ -44,6 +45,7 @@ function safeJsonParse<T>(raw: string): T | null {
 }
 
 export default function DraftGeneration() {
+  
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -112,6 +114,7 @@ export default function DraftGeneration() {
       from: "draft",
       draftId: generated?.draftId,
       topic: generated?.topic,
+      targetAudience: ctx?.form?.targetAudience, // ✅ add
       imagePrompt: prompt,
       scriptPreview: (draftResult.scriptHtml || "").trim(),
       style: generated?.visualDescription?.photo?.style,
@@ -119,7 +122,9 @@ export default function DraftGeneration() {
       brand: ctx?.form?.brand || undefined,
     };
 
+
     saveContentCtx(payload);
+    
     navigate("/content-generator", { state: payload });
   }
 
@@ -142,24 +147,25 @@ export default function DraftGeneration() {
 
     try {
       const topic =
-        draftConfig.sourceMode === "trend"
-          ? (draftConfig.terms[0] || "").trim()
-          : draftConfig.topicManual.trim();
+          draftConfig.sourceMode === "trend"
+            ? draftConfig.terms.map(t => t.trim()).filter(Boolean).join(", ")
+            : draftConfig.topicManual.trim();
 
-      if (!topic) {
-        setGenError("Topic kosong. Pilih minimal 1 term atau isi manual topic.");
-        return;
-      }
+        if (!topic) {
+          setGenError("Topic kosong. Pilih minimal 1 term atau isi manual topic.");
+          return;
+        }
 
-      const keyTopic =
-        draftConfig.sourceMode === "trend"
-          ? (draftConfig.terms[0] || "").replace(/\s+/g, "")
-          : topic.replace(/\s+/g, "");
+        const keyTopic =
+          draftConfig.sourceMode === "trend"
+            ? draftConfig.terms
+                .map(t => t.replace(/\s+/g, "").trim())
+                .filter(Boolean)
+                .join("_")
+            : topic.replace(/\s+/g, "");
 
-      const extraTerms =
-        draftConfig.sourceMode === "trend" ? draftConfig.terms.slice(1).join(", ") : "";
 
-      const targetKeywords = [draftConfig.keywords, extraTerms].filter(Boolean).join(", ");
+      const targetKeywords = (draftConfig.keywords || "").trim();
 
       const payload = {
         topic,
@@ -222,6 +228,8 @@ export default function DraftGeneration() {
   }, [generated, genLoading]);
 
 
+
+
 return (
   <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950 flex flex-col">
     <TopBarGenerate active="draft" />
@@ -268,6 +276,7 @@ return (
                 onChangeVisual={(v) =>
                   setDraftResult((p) => ({ ...p, visualPrompt: v }))
                 }
+                
               />
             </div>
           </section>

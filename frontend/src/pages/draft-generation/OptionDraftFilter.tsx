@@ -70,6 +70,17 @@ export default function OptionDraftFilter({ draftCtx = null, onChangeConfig, onG
   // slide count
   const [slides, setSlides] = useState(8);
   
+  function humanizeTerm(term: string) {
+    return term
+      // spasi sebelum huruf besar
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      // spasi sebelum angka
+      .replace(/([a-zA-Z])([0-9])/g, "$1 $2")
+      // kapital di awal
+      .replace(/^./, (s) => s.toUpperCase());
+  }
+  
+  
  
   //tombol
   const canGenerate =
@@ -169,14 +180,18 @@ export default function OptionDraftFilter({ draftCtx = null, onChangeConfig, onG
                   Tidak Ada Trend Insight yang Dimasukan.
                 </div>
               ) : (
-                <TagInput
+               <TagInput
                   label="Topic / Terms"
-                  value={terms}
-                  onChange={setTerms}
+                  value={terms.map(humanizeTerm)}
+                  onChange={(v) => {
+                    // balikin ke versi asli kalau user edit
+                    setTerms(v.map(t => t.replace(/\s+/g, "")));
+                  }}
                   placeholder="e.g. Range Anxiety"
                   hint="Primary topic signals"
                   max={20}
                 />
+
               )}
             </div>
           ) : (
