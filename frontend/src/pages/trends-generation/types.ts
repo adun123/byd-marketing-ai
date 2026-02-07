@@ -1,8 +1,11 @@
 // src/pages/trends-generation/types.ts
+
+/** ---------- Form / Filters ---------- */
+
 export type Platform =
-  | "tiktok-reels"
-  | "youtube-shorts"
-  | "instagram-post"
+  | "tiktok"
+  | "youtube"
+  | "instagram"
   | "linkedin";
 
 export type ContentType = "edu-ent" | "soft-campaign";
@@ -13,64 +16,46 @@ export type TargetAudience =
   | "genalpha-balanced"
   | "genalpha-emotional";
 
-  
+export type TopicPreset =
+  | "General"
+  | "Automotive"
+  | "Ev"
+  | "Technology"
+  | "Lifestyle";
 
+export const TOPIC_PRESETS: TopicPreset[] = [
+  "General",
+  "Automotive",
+  "Ev",
+  "Technology",
+  "Lifestyle",
+];
+
+/**
+ * topic: string supaya user bisa pilih preset atau ketik custom.
+ * Saran: kalau mau "wajib user pilih", defaultkan topic: "" di state.
+ */
 export type TrendsForm = {
-  
-  platform: string;
-  contentType: string;
-  targetAudience: string;
+  platform: Platform | string;     // string supaya fleksibel (kalau masih pakai -reels/-shorts)
+  contentType: ContentType | string;
+  targetAudience: TargetAudience | string;
+
   product: string;
   brand: string;
   message: string;
 
-  // NEW (optional biar gak ngerusak flow lama)
   query?: string;
-  topic?: "general" | "automotive" | "ev" | "technology" | "lifestyle";
+  topic?: string;                  // preset/custom
   language?: "en" | "id";
 };
 
-
-export type TrendsIdeas = {
-  hooks: string[];
-  visualBriefs?: string[];
-  angles: string[];
-  angleHowTos?: string[][];
-  captions: string[];
-  ctas: string[];
-  hashtags: string[];
-  updatedAtLabel: string;
-  trendTopics: { title: string }[];
-  hookPatterns: { pattern: string }[];
-  anglePatterns: { angle: string }[];
-  termsCloud?: { term: string; sentiment: Sentiment; weight: number }[];
-  topSentiment?: { name: string; sentiment: Sentiment; score: number }[];
-};
-
-// export type TrendSnapshot = {
-//   updatedAt: string;
-//   trendTopics: { title: string; whyItWorks: string; useMessage: string }[];
-//   hookPatterns: { pattern: string; examples: string[]; useHookHint: string }[];
-//   anglePatterns: { angle: string; howTo: string[]; useAngleHint: string }[];
-//   ctaBank: string[];
-//   hashtagClusters: { label: string; tags: string[] }[];
-// };
-// src/pages/trends-generation/types.ts
+/** ---------- Snapshot (insights) ---------- */
 
 export type Sentiment = "Positive" | "Negative" | "Neutral";
 
-export type TrendTopic = {
-  title: string;
-  note?: string;
-};
-
-export type HookPattern = {
-  pattern: string;
-};
-
-export type AnglePattern = {
-  angle: string;
-};
+export type TrendTopic = { title: string; note?: string };
+export type HookPattern = { pattern: string };
+export type AnglePattern = { angle: string };
 
 export type TermsCloudItem = {
   term: string;
@@ -86,103 +71,95 @@ export type SentimentRow = {
 
 export type TrendSnapshot = {
   updatedAtLabel: string;
-
-  // existing fields (biar kompatibel sama komponen kamu sekarang)
   trendTopics: TrendTopic[];
   hookPatterns: HookPattern[];
   anglePatterns: AnglePattern[];
-
-  // OPTIONAL (kalau mau lebih “niat” mirip screenshot)
   termsCloud?: TermsCloudItem[];
   topSentiment?: SentimentRow[];
 };
 
+/** ---------- Trends Search (backend result) ---------- */
 
-export type ViralSnippetSource = "tiktok" | "instagram" | "youtube" | "linkedin" | "news";
-
-export type ViralSnippet = {
-  id: string;
-  source: ViralSnippetSource;
-  authorHandle: string;     // @autovibe_id
-  authorName?: string;      // optional
-  title: string;            // caption / judul
-  thumbUrl: string;         // gambar thumbnail
-  href?: string;            // link asli (optional)
-  likes?: number;
-  comments?: number;
-  shares?: number;
-  publishedAt?: string;
+export type GroundingSource = {
+  title?: string;
+  uri?: string;
+  url?: string;
+  href?: string;
 };
 
-export type ViralSnippetsResponse = {
-  updatedAt: string;
-  items: ViralSnippet[];
-};
-
-
-
-// src/pages/trends-generation/types.ts
-export type DraftContextPayload = {
-  form: TrendsForm;
-  snapshot?: TrendSnapshot | null;
-
-  derived: {
-    terms: string[];
-    topSentiment: Array<{ name: string; sentiment: Sentiment; score: number }>;
-  };
-
-  selectedTerms: string[]; // yang dipilih user
-};
-
-
-export type GroundingSource = { title?: string; uri?: string };
-
-// trends-generation/types.ts
-export type SearchTrendsResponse = {
-  success: boolean;
-  query: string;
-
-  // ✅ tambah ini (sesuai response backend kamu)
-  grounding?: {
-    searchQueries?: string[];
-    sources?: Array<{ title?: string; uri?: string }>;
-  } | null;
-
-  trends: Array<{
-    topic: string;
-    keyTopic?: string;
-    scale?: number;
-    description?: string;
-    category?: string;
-    sentiment?: {
-      positive?: number;
-      negative?: number;
-      neutral?: number;
-      label?: "positive" | "negative" | "neutral";
-    };
-    sources?: Array<{ title: string; url: string; platform?: string }>;
-    engagement?: { estimated?: "high" | "medium" | "low"; reason?: string };
-  }>;
-};
-
-
-
-export type SearchTrendSource = {
-  title: string;
-  url: string;
-  platform: "instagram" | "tiktok" | "youtube" | "linkedin" | string;
+export type EvidenceItem = {
+  title?: string;
+  url?: string;
+  publishedAt?: string | null; // kadang null
 };
 
 export type SearchTrend = {
   topic: string;
-  keyTopic?: string;
+  keyTopic: string;
+  scale?: number;
+
+  hashtags?: string[]; // (tanpa #) boleh kosong
+
+  sentiment?: {
+    positive?: number;
+    negative?: number;
+    neutral?: number;
+    label?: string; // "positive"|"neutral"|"negative"
+  };
+
+  engagement?: {
+    estimated?: "high" | "medium" | "low";
+    reason?: string;
+  };
+
+  // NEW: backend terbaru
+  platform?: "instagram" | "tiktok" | "youtube" | "linkedin" | "all";
+  observedAt?: string;
+
+  evidence?: EvidenceItem[]; // ✅ penting buat “beneran viral” (ada URL bukti)
+
+  // legacy sources (kalau masih ada)
+  sources?: Array<{
+    title?: string;
+    url?: string;
+    platform?: string;
+  }>;
+
+  platformHint?: {
+    platform?: "instagram" | "tiktok" | "youtube" | "linkedin";
+    query?: string;
+  };
+
+  platformUrl?: string;
+
   description?: string;
-  sentiment?: { label?: string };
-  sources?: SearchTrendSource[];
-  engagement?: { estimated?: "high" | "medium" | "low" };
+  category?: string;
 };
 
 
+export type SearchTrendsResponse = {
+  success: boolean;
+  query: string;
+  platform?: string;
+  topic?: string;
+  language?: string;
+
+  searchedAt?: string;
+  summary?: string;
+  totalFound?: number;
+
+  grounding?:
+    | {
+        searchQueries?: string[];
+        sources?: GroundingSource[];
+      }
+    | null;
+
+  trends: SearchTrend[];
+};
+
+
+/** ---------- Viral items (untuk UI card) ---------- */
 
 export type ViralSnippetItem = {
   id: string;
@@ -191,11 +168,40 @@ export type ViralSnippetItem = {
   title: string;
   thumbUrl: string;
   href?: string;
-  
+
   likes: number;
   comments: number;
   shares: number;
 };
 
+/** ---------- Draft handoff ---------- */
 
+export type DraftContextPayload = {
+  form: TrendsForm;
+  snapshot?: TrendSnapshot | null;
+  derived: {
+    terms: string[];
+    topSentiment: Array<{ name: string; sentiment: Sentiment; score: number }>;
+  };
+  selectedTerms: string[];
+};
 
+/** ---------- Output ideas (kalau masih dipakai) ---------- */
+
+export type TrendsIdeas = {
+  hooks: string[];
+  visualBriefs?: string[];
+  angles: string[];
+  angleHowTos?: string[][];
+  captions: string[];
+  ctas: string[];
+  hashtags: string[];
+
+  updatedAtLabel: string;
+  trendTopics: { title: string }[];
+  hookPatterns: { pattern: string }[];
+  anglePatterns: { angle: string }[];
+
+  termsCloud?: { term: string; sentiment: Sentiment; weight: number }[];
+  topSentiment?: { name: string; sentiment: Sentiment; score: number }[];
+};
