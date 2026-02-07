@@ -1,6 +1,7 @@
 
 import { useNavigate } from "react-router-dom";
 import type { AgentCard } from "../../types/dashboard";
+import { BarChart3, Lightbulb, PenTool, Sparkles } from "lucide-react";
 
 function cn(...xs: Array<string | false | null | undefined>) {
   return xs.filter(Boolean).join(" ");
@@ -34,6 +35,22 @@ const accentMap: Record<
   },
 };
 
+function pickIconFromBadge(badge?: string) {
+  const b = (badge || "").toLowerCase();
+
+  if (b.includes("insight"))
+    return <Lightbulb className="h-6 w-6" />;
+
+  if (b.includes("draft"))
+    return <PenTool className="h-6 w-6" />;
+
+  if (b.includes("content"))
+    return <Sparkles className="h-6 w-6" />;
+
+  return <BarChart3 className="h-6 w-6" />;
+}
+
+
 function pickAccentFromBadge(badge?: string): Accent {
   const b = (badge || "").toLowerCase();
   if (b.includes("insight")) return "emerald";
@@ -66,7 +83,7 @@ return (
       "hover:border-primary/60 dark:hover:border-primary/60",
       "hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-2",
       "overflow-hidden",
-      "h-full",              // ✅ penting: biar bisa stretch sejajar
+      "h-full",              // penting: biar bisa stretch sejajar
       className
     )}
   >
@@ -79,7 +96,7 @@ return (
       )}
     />
 
-    {/* ✅ bikin konten jadi flex-col full height */}
+    {/* bikin konten jadi flex-col full height */}
     <div className="relative z-10 flex h-full flex-col">
       {/* icon */}
       <div
@@ -89,20 +106,14 @@ return (
           "group-hover:bg-primary group-hover:text-white transition-colors"
         )}
       >
-        <div className="scale-[1.05]">{card.icon}</div>
+        <div className="scale-[1.05]">
+          {pickIconFromBadge(card.badge)}
+        </div>
+
       </div>
 
       {/* badge */}
-      <span
-        className={cn(
-          "px-3 py-1 rounded-full inline-block mb-3",
-          "bg-slate-100 dark:bg-slate-800",
-          "text-[10px] font-extrabold text-slate-500",
-          "tracking-[0.18em] uppercase"
-        )}
-      >
-        {card.badge}
-      </span>
+      
 
       {/* meta */}
       {card.meta ? (
@@ -116,8 +127,8 @@ return (
         {card.title}
       </h3>
 
-      {/* ✅ desc boleh beda panjang, CTA tetap ke bawah */}
-      <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+      {/* desc boleh beda panjang, CTA tetap ke bawah */}
+      <p className="text-sm mb-10 text-slate-600 dark:text-slate-400 leading-relaxed">
         {card.desc}
       </p>
 
@@ -126,7 +137,7 @@ return (
         type="button"
         onClick={() => navigate(card.href)}
         className={cn(
-          "group w-full py-3 rounded-2xl mt-auto", // ✅ mt-auto = dorong ke bawah
+          "group w-full py-3 rounded-2xl mt-auto", // mt-auto = dorong ke bawah
           "bg-slate-100/90 dark:bg-slate-800/90",
           "text-slate-900 dark:text-slate-100",
           "flex items-center justify-center gap-2",
