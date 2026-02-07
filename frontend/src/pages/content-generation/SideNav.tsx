@@ -3,23 +3,35 @@ import * as React from "react";
 import { Image as ImageIcon, Video as VideoIcon } from "lucide-react";
 
 export type ContentGenTab = "image" | "video";
+export type ImageCategory = "infographic" | "carousel";
 
 type SideNavProps = {
   value: ContentGenTab;
   onSelect: (tab: ContentGenTab) => void;
   className?: string;
+
+  // ✅ NEW: controlled values from parent
+  imageCategory: ImageCategory;
+  onImageCategoryChange: (v: ImageCategory) => void;
+
+  slides: number;
+  onSlidesChange: (n: number) => void;
 };
 
 function cn(...s: Array<string | undefined | false>) {
   return s.filter(Boolean).join(" ");
 }
 
-export default function SideNav({ value, onSelect, className }: SideNavProps) {
-  const [imageCategory, setImageCategory] = React.useState<
-    "infographic" | "carousel"
-  >("infographic");
-  const [slides, setSlides] = React.useState(5);
+export default function SideNav({
+  value,
+  onSelect,
+  className,
 
+  imageCategory,
+  onImageCategoryChange,
+  slides,
+  onSlidesChange,
+}: SideNavProps) {
   const isImage = value === "image";
   const isCarousel = imageCategory === "carousel";
 
@@ -86,13 +98,13 @@ export default function SideNav({ value, onSelect, className }: SideNavProps) {
                   active={imageCategory === "infographic"}
                   title="Infographic"
                   desc="Single frame"
-                  onClick={() => setImageCategory("infographic")}
+                  onClick={() => onImageCategoryChange("infographic")}
                 />
                 <RadioChip
                   active={imageCategory === "carousel"}
                   title="Carousel"
                   desc="Multi-slide"
-                  onClick={() => setImageCategory("carousel")}
+                  onClick={() => onImageCategoryChange("carousel")}
                 />
               </div>
             </div>
@@ -115,7 +127,7 @@ export default function SideNav({ value, onSelect, className }: SideNavProps) {
                   min={2}
                   max={10}
                   value={slides}
-                  onChange={(e) => setSlides(Number(e.target.value))}
+                  onChange={(e) => onSlidesChange(Number(e.target.value))}
                   className="mt-3 w-full accent-[#068773]"
                 />
 
@@ -144,6 +156,7 @@ export default function SideNav({ value, onSelect, className }: SideNavProps) {
     </aside>
   );
 }
+
 
 /* ---------- UI bits ---------- */
 
