@@ -175,7 +175,7 @@ export default function OptionsStep1SourcePlatform({
               <AspectChip
                 active={aspect === "9:16"}
                 ratio="9:16"
-                hint="Reels"
+                hint="Stories"
                 box="tall"
                 onClick={() => onChange({ aspect: "9:16" })}
               />
