@@ -1,11 +1,11 @@
 import { Cloud, BarChart3 } from "lucide-react";
-import type { TrendSnapshot } from "./types";
-import type { SearchTrendsResponse } from "./types";
+import type { TrendSnapshot, SearchTrendsResponse } from "./types";
 
-function cn(...s: Array<string | undefined | false | null>) {
-  return s.filter(Boolean).join(" ");
-}
 
+/** Normalized sentiment type used across UI */
+type Sentiment = "Positive" | "Negative" | "Neutral";
+
+/** Component props */
 type Props = {
   data: TrendSnapshot;
   searchTrends?: SearchTrendsResponse | null;
@@ -15,35 +15,129 @@ type Props = {
   onAppendHint?: (hint: string) => void;
 };
 
-function toggleTerm(list: string[], t: string) {
-  return list.includes(t) ? list.filter((x) => x !== t) : [...list, t];
+/*Utilities / Helpers*/
+/**
+ * Tailwind class name helper
+ * Filters falsy values and joins them into a single string
+ */
+function cn(...s: Array<string | undefined | false | null>) {
+  return s.filter(Boolean).join(" ");
 }
 
-type Sentiment = "Positive" | "Negative" | "Neutral";
-
-function clamp(n: number, a = 0, b = 100) {
-  return Math.max(a, Math.min(b, n));
+/**
+ * Toggle a term in the selected list
+ * - If exists → remove
+ * - If not → add
+ */
+function toggleTerm(list: string[], term: string) {
+  return list.includes(term)
+    ? list.filter((x) => x !== term)
+    : [...list, term];
 }
 
-function pillClass(sent: Sentiment) {
-  if (sent === "Positive") return "border-[#068773]/20 bg-[#068773]/10 text-[#056d5c] dark:text-emerald-200";
-  if (sent === "Negative") return "border-rose-600/20 bg-rose-600/10 text-rose-700 dark:text-rose-200";
+/**
+ * Clamp a number between min and max (default 0–100)
+ * Used for sentiment scores and progress bars
+ */
+function clamp(n: number, min = 0, max = 100) {
+  return Math.max(min, Math.min(max, n));
+}
+
+/**
+ * Normalize sentiment label from API into UI-safe enum
+ */
+function normalizeSentiment(label?: string): Sentiment {
+  const s = (label || "").toLowerCase().trim();
+  if (s.includes("neg")) return "Negative";
+  if (s.includes("neu") || s.includes("mix")) return "Neutral";
+  if (s.includes("pos")) return "Positive";
+  return "Neutral"; //  default netral, bukan positive
+}
+
+
+/**
+ * Resolve numeric score from a trend item
+ * Priority:
+ * 1. scale (0..1) → percent
+ * 2. sentiment numeric values
+ * 3. safe fallback
+ */
+function scoreFromTrend(
+  trend: SearchTrendsResponse["trends"][number]
+): number {
+  // scale (0..1) => persen
+  if (typeof trend.scale === "number") {
+    const s = Math.round(trend.scale * 100);
+    if (s >= 5) return clamp(s); // jangan 0
+  }
+
+  const label = normalizeSentiment(trend.sentiment?.label);
+
+  const raw =
+    label === "Positive" ? trend.sentiment?.positive :
+    label === "Negative" ? trend.sentiment?.negative :
+    trend.sentiment?.neutral;
+
+  if (typeof raw === "number") {
+    // 0/1 itu bukan persen, itu cuma penanda
+    if (raw <= 5) return 60; // tampilkan stabil
+    return clamp(raw);
+  }
+
+  return 60;
+}
+
+
+function prettifyKeyTopic(s: string) {
+  const raw = String(s || "").trim();
+
+  // Sisip spasi: camelCase / PascalCase + angka
+  const spaced = raw
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")     // aB -> a B
+    .replace(/([A-Z])([A-Z][a-z])/g, "$1 $2")   // ABc -> A Bc
+    .replace(/([a-zA-Z])(\d)/g, "$1 $2")        // a1 -> a 1
+    .replace(/(\d)([a-zA-Z])/g, "$1 $2");       // 1a -> 1 a
+
+  // Capitalize kata pertama doang (opsional)
+  return spaced;
+}
+
+
+/* UI Style Helpers*/
+/**
+ * Pill (chip) style based on sentiment
+ */
+function pillClass(sentiment: Sentiment) {
+  if (sentiment === "Positive") {
+    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200";
+  }
+  if (sentiment === "Negative") {
+    return "border-rose-600/20 bg-rose-600/10 text-rose-700 dark:text-rose-200";
+  }
   return "border-slate-200/70 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 text-slate-600 dark:text-slate-300";
 }
 
-function barClass(sent: Sentiment) {
-  if (sent === "Positive") return "bg-[#068773]";
-  if (sent === "Negative") return "bg-rose-500";
+/**
+ * Bar color for sentiment visualization
+ */
+function barClass(sentiment: Sentiment) {
+  if (sentiment === "Positive") return "bg-emerald-500";
+  if (sentiment === "Negative") return "bg-rose-500";
   return "bg-slate-400";
 }
 
-/** terms chip sizing (lebih rapi + konsisten) */
-function sizeClass(i: number) {
-  if (i === 0) return "text-[13px] sm:text-[14px] font-extrabold";
-  if (i === 1) return "text-[12px] sm:text-[13px] font-bold";
-  if (i <= 3) return "text-[12px] font-semibold";
+/**
+ * Font sizing for term chips (based on importance / rank)
+ */
+function sizeClass(index: number) {
+  if (index === 0) return "text-[13px] sm:text-[14px] font-extrabold";
+  if (index === 1) return "text-[12px] sm:text-[13px] font-bold";
+  if (index <= 3) return "text-[12px] font-semibold";
   return "text-[12px] font-semibold";
 }
+
+/* Component
+ */
 
 export default function TrendsSnapshot({
   data,
@@ -51,103 +145,114 @@ export default function TrendsSnapshot({
   selectedTerms,
   onSelectedTermsChange,
 }: Props) {
-  
-  
-  type Sentiment = "Positive" | "Negative" | "Neutral";
 
-function normLabel(l?: string): Sentiment {
-  const s = (l || "").toLowerCase();
-  if (s === "negative") return "Negative";
-  if (s === "neutral") return "Neutral";
-  return "Positive";
-}
 
-function scoreFromTrend(t: SearchTrendsResponse["trends"][number]) {
-  // prioritas: scale (0..1) -> persen
-  if (typeof t.scale === "number") return clamp(Math.round(t.scale * 100));
 
-  // fallback: pakai angka sentiment kalau ada
-  const label = normLabel(t.sentiment?.label);
-  if (label === "Positive" && typeof t.sentiment?.positive === "number") return clamp(t.sentiment.positive);
-  if (label === "Negative" && typeof t.sentiment?.negative === "number") return clamp(t.sentiment.negative);
-  if (label === "Neutral" && typeof t.sentiment?.neutral === "number") return clamp(t.sentiment.neutral);
+  /* Derived data*/
 
-  return 60; // fallback aman
-}
+  /** Trends from API (if available) */
+  const trends = searchTrends?.trends ?? [];
 
-const trends = searchTrends?.trends || [];
+  /**
+   * Terms list:
+   * - Primary: keyTopic from search trends (NO #)
+   * - Fallback: snapshot data (topics, hooks, angles)
+   */
+  const terms =
+    trends.length > 0
+      ? trends
+          .map((t) => String(t.keyTopic || "").trim())
+          .filter(Boolean)
+          .slice(0, 10)
+      : [
+          ...data.trendTopics.map((t) => t.title),
+          ...data.hookPatterns.map((h) => h.pattern),
+          ...data.anglePatterns.map((a) => a.angle),
+        ]
+          .filter(Boolean)
+          .slice(0, 10);
 
-// TERMS dari searchTrends (utama). Kalau belum ada, fallback ke insights seperti sebelumnya.
-const terms =
-  trends.length > 0
-    ? trends
-        .map((t) => (t.keyTopic?.trim() ? t.keyTopic.trim() : t.topic?.trim()))
-        .filter(Boolean)
-        .slice(0, 10) as string[]
-    : [
-        ...data.trendTopics.map((t) => t.title),
-        ...data.hookPatterns.map((h) => h.pattern),
-        ...data.anglePatterns.map((a) => a.angle),
-      ]
-        .filter(Boolean)
-        .slice(0, 10);
+  /**
+   * Map term(keyTopic) → sentiment
+   * Used to color term chips consistently
+   */
+  const sentimentByTerm = new Map<string, Sentiment>();
 
-// sentimentByTerm: kalau ada searchTrends, pakai label per trend
-const sentimentByTerm = new Map<string, Sentiment>();
+  if (trends.length > 0) {
+    for (const t of trends.slice(0, 10)) {
+      const term = String(t.keyTopic || "").trim();
+      if (!term) continue;
 
-if (trends.length > 0) {
-  for (const t of trends.slice(0, 10)) {
-    const term = (t.keyTopic?.trim() ? t.keyTopic.trim() : t.topic?.trim()) || "";
-    if (!term) continue;
-    sentimentByTerm.set(term, normLabel(t.sentiment?.label));
+      // kalau label kosong, jangan otomatis positive (biar gak bias)
+      const s = normalizeSentiment(t.sentiment?.label);
+      sentimentByTerm.set(term, s);
+    }
+  } else {
+    // Fallback sentiment (keeps UI alive before trends load)
+    terms.forEach((t) => sentimentByTerm.set(t, "Neutral"));
   }
-} else {
-  // fallback kalau belum ada searchTrends (biar UI tetap jalan)
-  terms.forEach((t) => sentimentByTerm.set(t, "Positive"));
-}
 
-// sentimentRows top 5: dari trends (utama), kalau tidak ada trends pakai terms saja (tapi labelnya default)
-const sentimentRows =
-  trends.length > 0
-    ? trends.slice(0, 5).map((t) => {
-        const name = t.topic;
-        const sentiment = normLabel(t.sentiment?.label);
-        const score = scoreFromTrend(t);
-        return { name, score, sentiment };
-      })
-    : terms.slice(0, 5).map((name, idx) => ({
-        name,
-        score: clamp(80 - idx * 6),
-        sentiment: "Positive" as Sentiment,
-      }));
+  /**
+   * Rows for sentiment summary (top 5)
+   * (ini kanan, pakai topic biar judulnya panjang/jelas)
+   */
+  const sentimentRows =
+    trends.length > 0
+      ? trends.slice(0, 5).map((t, idx) => ({
+          name: String(t.topic || t.keyTopic || `Trend ${idx + 1}`),
+          score: scoreFromTrend(t),
+          sentiment: normalizeSentiment(t.sentiment?.label),
+        }))
+      : terms.slice(0, 5).map((name, idx) => ({
+          name: String(name || `Trend ${idx + 1}`),
+          score: clamp(80 - idx * 6),
+          sentiment: "Neutral" as Sentiment,
+        }));
+
+        
+      const windowLabel =
+        (searchTrends as any)?.windowLabel ||
+        (typeof (searchTrends as any)?.daysUsed === "number"
+          ? ((searchTrends as any).daysUsed === 1 ? "24h" : `${(searchTrends as any).daysUsed}d`)
+          : undefined);
+
+      
 
 
- 
 
-  
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
       {/* LEFT: Terms cloud */}
       <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-5 shadow-sm">
         <div className="flex items-start justify-between gap-3">
+          {/* LEFT */}
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#068773]/10 text-[#068773]">
               <Cloud className="h-4.5 w-4.5" />
             </div>
+
             <div>
-              <div className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                Trending Terms
+              <div className="flex items-center gap-2">
+                <div className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+                  Trending Terms
+                </div>
+
+                {windowLabel ? (
+                  <span className="inline-flex items-center rounded-full border border-[#068773]/20 bg-[#068773]/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#068773]">
+                    {windowLabel}
+                  </span>
+                ) : null}
               </div>
+
               <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
                 Tap untuk pilih keyword (multi-select)
               </div>
             </div>
           </div>
 
-          <span className="inline-flex items-center rounded-full border border-[#068773]/20 bg-[#068773]/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#068773]">
-            Snapshot
-          </span>
+          
         </div>
+
 
         {/* chips */}
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
@@ -170,7 +275,7 @@ const sentimentRows =
                 )}
                 title="Klik untuk memilih (multi-select)"
               >
-                {t}
+               {prettifyKeyTopic(t)}
               </button>
             );
           })}
@@ -225,14 +330,19 @@ const sentimentRows =
         </div>
 
         <div className="mt-4 space-y-3">
-          {sentimentRows.map((r, idx) => (
-            <div key={r.name} className="space-y-2">
+          {sentimentRows.map((r, idx) => {
+          return (
+            
+            <div key={`${idx}-${r.name}`} className="space-y-2">
               <div className="flex items-start justify-between gap-3">
-                <div className="text-[13px] font-semibold text-slate-900 dark:text-slate-50">
-                  {idx + 1}. {r.name}
+                <div className="min-w-0 text-[13px] font-semibold text-slate-900 dark:text-slate-50">
+                  <span className="mr-1">{idx + 1}.</span>
+                  <span className="line-clamp-2 break-words">{r.name}</span>
                 </div>
 
-                <div className="text-right">
+
+               <div className= "shrink-0 text-right min-w-[56px] tabular-nums">
+
                   <div
                     className={cn(
                       "text-[12px] font-bold",
@@ -267,7 +377,8 @@ const sentimentRows =
                 />
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
 
         <div className="mt-5 flex items-end justify-between border-t border-slate-100 dark:border-slate-800 pt-4">
