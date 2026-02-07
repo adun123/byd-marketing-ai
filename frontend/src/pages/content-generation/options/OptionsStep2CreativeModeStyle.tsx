@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Image as ImageIcon, Wand2, Sparkles, UploadCloud, X } from "lucide-react";
+import { Image as  Wand2, Sparkles, UploadCloud, X } from "lucide-react";
 
 function cn(...s: Array<string | undefined | false>) {
   return s.filter(Boolean).join(" ");
@@ -39,12 +39,12 @@ const MODE_ITEMS: Array<{
     desc: "Remix / edit with references",
     icon: <Wand2 className="h-4 w-4" />,
   },
-  {
-    id: "upscale",
-    title: "Upscale",
-    desc: "Sharpen + enhance resolution",
-    icon: <ImageIcon className="h-4 w-4" />,
-  },
+  // {
+  //   id: "upscale",
+  //   title: "Upscale",
+  //   desc: "Sharpen + enhance resolution",
+  //   icon: <ImageIcon className="h-4 w-4" />,
+  // },
 ];
 
 const STYLES: Array<{ id: VisualStyle; label: string }> = [
@@ -67,7 +67,7 @@ export default function OptionsStep2CreativeModeStyle({
   const needsImage = workflow === "image_to_image" || workflow === "upscale";
   const hasImage = attachments.length > 0;
 
-  const uploadMax = workflow === "image_to_image" ? 6 : 1;
+  const uploadMax = workflow === "image_to_image" ? 5 : 1;
   const uploadLabel =
     workflow === "image_to_image" ? `Upload up to ${uploadMax} images` : "Upload 1 image";
 
