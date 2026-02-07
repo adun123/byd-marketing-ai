@@ -1,5 +1,5 @@
 // src/pages/content-generation/OptionsPanel.tsx
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import OptionsStep1SourcePlatform, { type SourceMode } from "./OptionsStep1SourcePlatform";
 import OptionsStep2CreativeModeStyle from "./OptionsStep2CreativeModeStyle";
 import OptionsStep3PromptInput from "./OptionsStep3PromptInput";
@@ -15,7 +15,8 @@ type Props = {
   workflow: Workflow;
   visualStyle: VisualStyle;
   aspect: "1:1" | "4:5" | "16:9" | "9:16";
-  onChange: (v: { workflow?: Workflow; visualStyle?: VisualStyle }) => void;
+
+  onChange: (v: { workflow?: Workflow; visualStyle?: VisualStyle; aspect?: Props["aspect"] }) => void;
 
   sourceMode: SourceMode;
   onSourceModeChange: (m: SourceMode) => void;
@@ -25,7 +26,9 @@ type Props = {
 
   prompt: string;
   onPromptChange: (v: string) => void;
-  onGenerate: () => void;
+
+  // ✅ generate selalu pakai prompt final (effectivePrompt)
+  onGenerate: (prompt: string) => void;
 
   attachments: ImgAttachment[];
   setAttachments: React.Dispatch<React.SetStateAction<ImgAttachment[]>>;
@@ -47,15 +50,14 @@ export default function OptionsPanel({
   attachments,
   setAttachments,
   isGenerating = false,
-  
 }: Props) {
   const [platform, setPlatform] = useState<"instagram" | "tiktok" | "linkedin">("instagram");
 
-   const handlePickImages = (files: FileList) => {
+  const handlePickImages = (files: FileList) => {
     const arr = Array.from(files);
     if (arr.length === 0) return;
 
-    const max = workflow === "image_to_image" ? 6 : 1; // upscale = 1
+    const max = workflow === "image_to_image" ? 5 : 1; // upscale = 1
     const picked = arr.slice(0, max);
 
     const next: ImgAttachment[] = picked.map((file) => ({
@@ -71,9 +73,9 @@ export default function OptionsPanel({
         return next.slice(0, 1);
       }
 
-      // image_to_image: gabung + max 6 total
+      // image_to_image: gabung + max 5 total
       const merged = [...next, ...prev];
-      return merged.slice(0, 6);
+      return merged.slice(0, 5);
     });
   };
 
@@ -91,53 +93,66 @@ export default function OptionsPanel({
       return [];
     });
   };
+
   function htmlToPlainText(html?: string) {
     if (!html) return "";
-    // aman di browser
     const div = document.createElement("div");
     div.innerHTML = html;
     return (div.innerText || "").trim();
   }
+
   const previewText =
     sourceMode === "draft"
-      ? (htmlToPlainText(draftScriptPreview) || "No draft imported.")
+      ? htmlToPlainText(draftScriptPreview) || "No draft imported."
       : "Manual mode.";
 
-      //  Prompt yang benar-benar dipakai untuk generate
-      const effectivePrompt =
-        sourceMode === "draft"
-          ? (draftVisualPrompt?.trim() || "")
-          : prompt.trim();
-      const handleGenerateClick = () => {
-        if (!effectivePrompt) return;
+  // ✅ prompt yang benar-benar dipakai untuk generate
+  const effectivePrompt = useMemo(() => {
+    return sourceMode === "draft" ? (draftVisualPrompt?.trim() || "") : prompt.trim();
+  }, [sourceMode, draftVisualPrompt, prompt]);
 
-        // sync prompt state (penting)
-        onPromptChange(effectivePrompt);
+  const handleGenerateClick = () => {
+    if (!effectivePrompt) return;
 
-        // trigger generate
-        onGenerate();
-      };
+    // sync state prompt (biar UI step3 kebaca konsisten)
+    onPromptChange(effectivePrompt);
 
-  
+    // ✅ generate pakai prompt final, tanpa nunggu state update
+    onGenerate(effectivePrompt);
+  };
+
+  // ✅ validasi pakai effectivePrompt (bukan prompt state doang)
+  const promptOk = effectivePrompt.trim().length >= 2;
+  const hasRef = attachments.length >= 1;
+
+  const disabledGenerate =
+    workflow === "text_to_image"
+      ? !promptOk
+      : workflow === "image_to_image"
+      ? !(promptOk && hasRef)
+      : workflow === "upscale"
+      ? !hasRef
+      : true;
+
   return (
     <div className="space-y-4">
       <OptionsStep1SourcePlatform
         workflow={workflow}
         aspect={aspect}
         onChange={(v) => {
+          // ✅ 1 jalur update: semuanya lewat onChange
           if (v.workflow) onChange({ workflow: v.workflow });
-          if (v.aspect) onChange({ ...v }); // atau khusus aspect handler kamu
+          if (v.aspect) onChange({ aspect: v.aspect });
         }}
         sourceMode={sourceMode}
         onSourceModeChange={(m) => {
           onSourceModeChange(m);
           if (m === "draft" && draftVisualPrompt) onPromptChange(draftVisualPrompt);
         }}
-        scriptPreview={sourceMode === "draft" ? (previewText || "No draft imported.") : "Manual mode."}
+        scriptPreview={sourceMode === "draft" ? previewText : "Manual mode."}
         platform={platform}
         onPlatformChange={setPlatform}
       />
-
 
       <OptionsStep2CreativeModeStyle
         workflow={workflow}
@@ -149,18 +164,18 @@ export default function OptionsPanel({
         onClearImages={handleClearImages}
       />
 
-
-
       {/* Step 3 (only for manual) */}
       {sourceMode === "manual" ? (
-      <OptionsStep3PromptInput
-        prompt={prompt}
-        onChange={onPromptChange}
-        onGenerate={onGenerate}
-        isGenerating={isGenerating}
-        disabledGenerate={false /* nanti kita benerin rule */}
-        active
-      />
+        <OptionsStep3PromptInput
+          prompt={prompt}
+          onChange={onPromptChange}
+          // ✅ pastikan Step3 generate pakai handler yang sama
+          onGenerate={() => handleGenerateClick()}
+          isGenerating={isGenerating}
+          disabledGenerate={disabledGenerate}
+          active
+        />
+
      ) : (
   <div className="w-full overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 shadow-sm">
     <div className="p-4">
@@ -181,7 +196,7 @@ export default function OptionsPanel({
       
 
 
-      {/* ✅ tampilkan script yang dibawa dari Draft (HOOK + script) */}
+      {/* tampilkan script yang dibawa dari Draft (HOOK + script) */}
       <div className="rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-white dark:bg-slate-900 px-3 py-3 text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
         <div className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
           Script preview
@@ -196,7 +211,7 @@ export default function OptionsPanel({
         </div>
       </div>
 
-      {/* ✅ tombol Generate tetap ada */}
+      {/*  tombol Generate tetap ada */}
       <button
         type="button"
         onClick={handleGenerateClick}
