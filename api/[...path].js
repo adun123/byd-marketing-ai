@@ -14,6 +14,9 @@ import imageEdit from "./_handlers/image/edit.js";
 import imageMarketing from "./_handlers/image/marketing.js";
 import imageMaskEdit from "./_handlers/image/mask-edit.js";
 
+import imageCombine from "./_handlers/image/combine.js";
+
+
 export default async function handler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const path = url.pathname;
@@ -36,7 +39,8 @@ export default async function handler(req, res) {
 
   // edit-mask:
   if (path.startsWith("/api/image/mask-edit")) return imageMaskEdit(req, res);
- 
+  if (path.startsWith("/api/image/combine")) return imageCombine(req, res);
+
   if (path.startsWith("/api/trends/insights")) return trendsInsights(req, res);
   if (path.startsWith("/api/trends/options")) return trendsOptions(req, res);
   if (path.startsWith("/api/trends/generate-content")) return trendsGenerateContent(req, res);
