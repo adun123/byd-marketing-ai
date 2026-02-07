@@ -1,6 +1,6 @@
 // src/pages/preview-generation/PreviewValidationPanel.tsx
-import * as React from "react";
-import { ShieldCheck, Sparkles } from "lucide-react";
+
+import { Sparkles } from "lucide-react";
 
 function cn(...s: Array<string | undefined | false | null>) {
   return s.filter(Boolean).join(" ");

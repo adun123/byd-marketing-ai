@@ -1,5 +1,5 @@
 // src/pages/preview-generation/PreviewFooter.tsx
-import * as React from "react";
+
 import { FileDown, Rocket } from "lucide-react";
 
 function cn(...s: Array<string | undefined | false | null>) {
