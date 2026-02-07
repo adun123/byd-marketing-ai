@@ -436,7 +436,7 @@ ${langInstruction}
       language: lang,
       searchedAt: nowIso,
       daysUsed: windowDays,
-      windowLabel: windowDays === 1 ? "24h" : `${usedDays}d`,
+      windowLabel: windowDays === 1 ? "24h" : `${windowDays}d`,
       totalFound: normalizedTrends.length,
       summary: data?.summary || "",
       trends: normalizedTrends,
@@ -448,16 +448,6 @@ ${langInstruction}
     return res.status(500).json({ error: error.message });
   }
 };
-
-
-
-
-
-
-
-
-
-
 
 export const generateTrendContent = async (req, res) => {
   try {
