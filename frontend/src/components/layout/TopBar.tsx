@@ -1,5 +1,5 @@
 
-import logo from "../../../public/logo_haka.webp";
+import logo from "../../assets/logo_haka.webp";
 function cn(...s: Array<string | undefined | false | null>) {
   return s.filter(Boolean).join(" ");
 }
