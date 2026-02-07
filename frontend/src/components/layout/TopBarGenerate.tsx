@@ -29,14 +29,14 @@ export default function TopBarGenerate({ active = "trend" }: TopBarProps) {
 
   const current = active ?? detectedActive;
 
-  function toggleTheme() {
-    const root = document.documentElement;
-    root.classList.toggle("dark");
-    // optional: persist
-    try {
-      localStorage.setItem("theme", root.classList.contains("dark") ? "dark" : "light");
-    } catch {}
-  }
+  // function toggleTheme() {
+  //   const root = document.documentElement;
+  //   root.classList.toggle("dark");
+  //   // optional: persist
+  //   try {
+  //     localStorage.setItem("theme", root.classList.contains("dark") ? "dark" : "light");
+  //   } catch {}
+  // }
 
   return (
     <header className=" top-0 z-30 border-b border-slate-200/70 dark:border-slate-800/70 bg-white/85 dark:bg-slate-950/70 backdrop-blur">
@@ -117,7 +117,7 @@ export default function TopBarGenerate({ active = "trend" }: TopBarProps) {
             </a>
 
             {/* Theme */}
-            <button
+            {/* <button
               type="button"
               onClick={toggleTheme}
               className={cn(
@@ -133,7 +133,7 @@ export default function TopBarGenerate({ active = "trend" }: TopBarProps) {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M21 14.5A8.5 8.5 0 0 1 9.5 3a7 7 0 1 0 11.5 11.5z" />
               </svg>
-            </button>
+            </button> */}
 
             {/* User */}
             <button

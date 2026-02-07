@@ -70,7 +70,7 @@ export default function Dashboard(){
                     "focus:outline-none focus:ring-2 focus:ring-[#068773]/30"
                   )}
                 >
-                  Buka Workspace Tren
+                  Buka Workspace Trend
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-white/80 transition group-hover:translate-x-0.5" />
                 </a>
 
