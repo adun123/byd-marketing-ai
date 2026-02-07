@@ -139,6 +139,17 @@ export default function OutputCanvasCard({
   }
 }
 
+
+//edit mask:
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result || ""));
+    r.onerror = () => reject(new Error("Failed to read blob"));
+    r.readAsDataURL(blob);
+  });
+}
+
 async function handleApplyMaskEdit(
   { maskBlob, prompt }: { maskBlob: Blob; prompt?: string },
   target: CanvasItem // atau GeneratedOutput (yang punya id, imageUrl/base64, prompt)
@@ -162,16 +173,26 @@ async function handleApplyMaskEdit(
     const imageBlob = await imageRes.blob();
 
     // 2) prepare multipart
-    const fd = new FormData();
-    fd.append("image", imageBlob, `image-${target.id}.png`);
-    fd.append("mask", maskBlob, `mask-${target.id}.png`);
-    if (prompt?.trim()) fd.append("prompt", prompt.trim());
+   // ambil image target sebagai blob
+    
+    if (!imageRes.ok) throw new Error(`Failed to fetch image (${imageRes.status})`);
+    
 
-    // 3) call endpoint
+    // convert ke dataURL
+    const imageDataUrl = await blobToDataUrl(imageBlob);
+    const maskDataUrl = await blobToDataUrl(maskBlob);
+
+    // kirim JSON (BUKAN FormData)
     const res = await fetch(`${API_BASE}/image/mask-edit`, {
       method: "POST",
-      body: fd,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        image: imageDataUrl,
+        mask: maskDataUrl,
+        prompt: (prompt || "").trim(),
+      }),
     });
+
 
     if (!res.ok) {
       const t = await res.text().catch(() => "");
