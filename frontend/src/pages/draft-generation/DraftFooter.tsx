@@ -20,17 +20,32 @@ export default function DraftFooter({
   disabled,
 }: Props) {
   return (
-    <div className="sticky bottom-0 z-30 mt-6 border-t border-slate-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
+    <footer
+      className="
+        sticky bottom-0 z-30
+        border-t border-slate-200/80 dark:border-slate-800/80
+        bg-white/90 dark:bg-slate-950/85
+        backdrop-blur
+      "
+      style={{
+        height: "96px",
+        ["--footer-h" as any]: "96px",
+      }}
+    >
+      <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-4 px-4">
         {/* LEFT ACTIONS */}
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onViewHistory}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2",
-              "text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-            )}
+            className="
+              inline-flex items-center gap-2 rounded-xl
+              border border-slate-200/80 dark:border-slate-800/80
+              bg-white dark:bg-slate-900
+              px-4 py-2
+              text-xs font-semibold text-slate-700 dark:text-slate-200
+              transition hover:bg-slate-50 dark:hover:bg-slate-800/60
+            "
           >
             <History className="h-4 w-4" />
             View History
@@ -39,19 +54,23 @@ export default function DraftFooter({
           <button
             type="button"
             onClick={onSaveDraft}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2",
-              "text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-            )}
+            className="
+              inline-flex items-center gap-2 rounded-xl
+              border border-slate-200/80 dark:border-slate-800/80
+              bg-white dark:bg-slate-900
+              px-4 py-2
+              text-xs font-semibold text-slate-700 dark:text-slate-200
+              transition hover:bg-slate-50 dark:hover:bg-slate-800/60
+            "
           >
             <Save className="h-4 w-4" />
-            Save to Drafts
+            Save Draft
           </button>
         </div>
 
         {/* RIGHT STATUS + CTA */}
         <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 text-[11px] text-slate-500">
+          <div className="hidden sm:flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
             <Clock className="h-4 w-4" />
             {lastSavedLabel}
           </div>
@@ -61,18 +80,21 @@ export default function DraftFooter({
             disabled={disabled}
             onClick={onFinalize}
             className={cn(
-              "inline-flex items-center gap-2 rounded-xl px-6 py-3 text-xs font-semibold text-white",
+              "inline-flex items-center gap-2 rounded-xl px-6 py-3",
+              "text-xs font-semibold text-white transition-all",
               "bg-gradient-to-r from-[#068773] to-[#0fb9a8]",
-              "hover:-translate-y-0.5 hover:shadow-md",
-              "focus:outline-none focus:ring-2 focus:ring-emerald-600/30",
-              disabled && "cursor-not-allowed opacity-60 hover:translate-y-0 hover:shadow-none"
+              "focus:outline-none focus:ring-2 focus:ring-[#068773]/30",
+              disabled
+                ? "cursor-not-allowed opacity-60"
+                : "hover:-translate-y-0.5 hover:shadow-md"
             )}
           >
-            FINALIZE CONTENT
+            FINALIZE
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>
       </div>
-    </div>
+    </footer>
   );
 }
+
