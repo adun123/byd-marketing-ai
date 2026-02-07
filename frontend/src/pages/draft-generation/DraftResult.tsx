@@ -1,7 +1,6 @@
-import { RefreshCw, Lightbulb } from "lucide-react";
+import { RefreshCw, Lightbulb,  Trash2 } from "lucide-react";
 import ScriptEditorCard from "./ScriptEditorCard";
 import {  useEffect} from "react";
-import VisualDescriptionCard from "./VisualDescriptionCard";
 import type { DraftContextPayload } from "../trends-generation/types";
 import type { GenerateContentResponse } from "./types";
 import DraftHookCard from "./components/DraftHookCard";
@@ -22,6 +21,7 @@ export default function DraftResult({
   onChangeScript,
   onChangeVisual,
   onRegenerateAll,
+  onReset,
 }: {
   draftCtx: DraftContextPayload | null;
   generated: GenerateContentResponse | null;
@@ -63,26 +63,26 @@ function escapeHtml(s: string) {
 useEffect(() => {
   if (!generated) return;
 
-  // ✅ isi scriptHtml ke parent kalau belum ada
+  // isi scriptHtml ke parent kalau belum ada
   const slides = generated.storyline?.slides || [];
   if (!scriptHtml && slides.length) {
     const html = slides
       .map(
         (s) =>
-          `<p><strong>[SLIDE ${s.slideNumber}: ${s.title}]</strong><br/>${s.content}</p>` +
+          `<p><strong>[CAPTION ${s.slideNumber}: ${s.title}]</strong><br/>${s.content}</p>` +
           (s.visualCue ? `<p><em>Visual:</em> ${s.visualCue}</p>` : "")
       )
       .join("");
 
-    onChangeScript(html); // ✅ penting: set ke parent (biar kepersist)
+    onChangeScript(html); // penting: set ke parent (biar kepersist)
   }
 
-  // ✅ isi visualPrompt ke parent kalau belum ada
+  // isi visualPrompt ke parent kalau belum ada
   const p =
     generated.visualDescription?.photo?.prompt ||
     generated.visualDescription?.video?.prompt;
 
-  if (!visualPrompt && p) onChangeVisual(p); // ✅ ke parent
+  if (!visualPrompt && p) onChangeVisual(p); // ke parent
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [generated]);
 
@@ -128,22 +128,46 @@ return (
         Hook / Headline Options
       </div>
 
-      <button
-        type="button"
-        onClick={onRegenerateAll}
-        disabled={isLoading}
-        className={cn(
-          "inline-flex items-center gap-2 rounded-xl px-2 py-1 text-[11px] font-semibold transition",
-          "focus:outline-none focus:ring-2 focus:ring-[#068773]/20",
-          isLoading
-            ? "text-slate-400 cursor-not-allowed"
-            : "text-[#068773] hover:bg-[#068773]/10"
-        )}
-      >
-        <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-        {isLoading ? "Generating…" : "Regenerate"}
-      </button>
+      {/* RIGHT ACTIONS */}
+      <div className="flex items-center gap-2">
+        {/* RESET / CLEAR */}
+        <button
+          type="button"
+          onClick={onReset}
+          disabled={isLoading || !hasGenerated}
+          className={cn(
+            "inline-flex items-center gap-2 rounded-xl px-2 py-1 text-[11px] font-semibold transition",
+            "focus:outline-none focus:ring-2 focus:ring-rose-500/20",
+            isLoading || !hasGenerated
+              ? "text-slate-400 cursor-not-allowed"
+              : "text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+          )}
+          title="Hapus semua hasil draft"
+        >
+          <Trash2 className="h-4 w-4" />
+          Reset
+        </button>
+
+        {/* REGENERATE */}
+        <button
+          type="button"
+          onClick={onRegenerateAll}
+          disabled={isLoading}
+          className={cn(
+            "inline-flex items-center gap-2 rounded-xl px-2 py-1 text-[11px] font-semibold transition",
+            "focus:outline-none focus:ring-2 focus:ring-[#068773]/20",
+            isLoading
+              ? "text-slate-400 cursor-not-allowed"
+              : "text-[#068773] hover:bg-[#068773]/10"
+          )}
+        >
+          <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+          {isLoading ? "Generating…" : "Regenerate"}
+        </button>
+      </div>
     </div>
+
+
 
     {/* Error */}
     {error ? (
@@ -207,24 +231,43 @@ return (
 
     {/* Script + Visual */}
     {!hasGenerated && !isLoading ? (
-  <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-    <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 p-4 text-[12px] text-slate-600 dark:text-slate-300">
-      <div className="font-semibold text-slate-900 dark:text-slate-50">Script Editor</div>
-      <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-        Belum ada script. Klik <b>Generate Draft</b> di panel kiri.
+    <div className="mt-5 rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 p-4 text-[12px] text-slate-600 dark:text-slate-300">
+      <div className="flex items-start gap-3">
+        {/* Icon */}
+        <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4"
+          >
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+          </svg>
+        </div>
+
+        {/* Content */}
+        <div className="min-w-0">
+          <div className="font-semibold text-slate-900 dark:text-slate-50">
+            Script Editor
+          </div>
+          <div className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+            No script has been generated yet. Click{" "}
+            <span className="font-medium text-slate-600 dark:text-slate-300">
+              Generate Draft
+            </span>{" "}
+            in the left panel to get started.
+          </div>
+        </div>
       </div>
     </div>
 
-    <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 p-4 text-[12px] text-slate-600 dark:text-slate-300">
-      <div className="font-semibold text-slate-900 dark:text-slate-50">Visual Prompt</div>
-      <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-        Belum ada visual prompt. Klik <b>Generate Draft</b> di panel kiri.
-      </div>
-    </div>
-  </div>
 ) : (
-    <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <div className="animate-[fadeUp_.18s_ease-out]">
+   <div className="animate-[fadeUp_.18s_ease-out]">
         <ScriptEditorCard
           value={scriptHtml}
           onChange={onChangeScript}
@@ -232,17 +275,22 @@ return (
           isLoading={isLoading}
         />
       </div>
-
-      <div className="animate-[fadeUp_.18s_ease-out]">
-        <VisualDescriptionCard
-          value={visualPrompt}
-          onChange={onChangeVisual}
-          onPolish={(plain) => console.log("polish:", plain)}
-        />
-      </div>
-    </div>
     )}
   </div>
   
 );
 }
+
+
+
+// <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+     
+
+    //   {/* <div className="animate-[fadeUp_.18s_ease-out]">
+    //     <VisualDescriptionCard
+    //       value={visualPrompt}
+    //       onChange={onChangeVisual}
+    //       onPolish={(plain) => console.log("polish:", plain)}
+    //     />
+    //   </div> */}
+    // </div>
