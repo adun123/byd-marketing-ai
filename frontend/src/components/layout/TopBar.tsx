@@ -1,5 +1,5 @@
 
-
+import logo from "/logo_haka.webp";
 function cn(...s: Array<string | undefined | false | null>) {
   return s.filter(Boolean).join(" ");
 }
@@ -21,7 +21,7 @@ export default function TopBar() {
           {/* Logo block */}
           <div className="flex min-w-0 items-center gap-3">
             <img
-              src="/logo_haka.webp"
+              src={logo}
               alt="HAKA Logo"
               className="h-10 w-auto object-contain"
             />
