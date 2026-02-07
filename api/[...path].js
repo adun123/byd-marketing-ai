@@ -1,104 +1,48 @@
-import { v4 as uuidv4 } from "uuid";
-import { getImageModel } from "../../../lib/gemini.js";
-import { saveBase64Image, prepareImagePart, cleanupFiles } from "../../../lib/imageUtils.js";
+// api/[...path].js
+import apiIndex from "./_handlers/index.js";
+import docs from "./_handlers/docs.js";
+import health from "./_handlers/health.js";
+import healthGemini from "./_handlers/health/gemini.js";
 
-async function readJsonBody(req) {
-  // 1) already parsed object
-  if (req.body && typeof req.body === "object") return req.body;
+import trendsSearch from "./_handlers/trends/search.js";
+import trendsInsights from "./_handlers/trends/insights.js";
+import trendsOptions from "./_handlers/trends/options.js";
+import trendsGenerateContent from "./_handlers/trends/generate-content.js";
 
-  // 2) string body
-  if (typeof req.body === "string") {
-    try {
-      return JSON.parse(req.body);
-    } catch {
-      return {};
-    }
-  }
+import imageGenerate from "./_handlers/image/generate.js";
+import imageEdit from "./_handlers/image/edit.js";
+import imageMarketing from "./_handlers/image/marketing.js";
 
-  // 3) stream fallback
-  const chunks = [];
-  for await (const c of req) chunks.push(c);
-  const raw = Buffer.concat(chunks).toString("utf8");
-  if (!raw) return {};
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return {};
-  }
-}
-
+//pembaruan
 export default async function handler(req, res) {
-  // CORS (penting untuk browser POST)
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const path = url.pathname; // ex: /api/trends/search
 
-  if (req.method === "OPTIONS") return res.status(204).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-
-  try {
-    const body = await readJsonBody(req);
-
-    const prompt = body?.prompt;
-    const preserveStyle = body?.preserveStyle;
-    const imageFile = body?.image; // base64 data URL expected
-
-    if (!imageFile) return res.status(400).json({ error: "Image is required" });
-    if (!prompt) return res.status(400).json({ error: "Prompt is required" });
-
-    // Save base64 temporarily (expect "data:image/...")
-    let tempFilePath = null;
-    if (typeof imageFile === "string" && imageFile.startsWith("data:image/")) {
-      const base64Data = imageFile.split(",")[1] || "";
-      if (!base64Data) return res.status(400).json({ error: "Invalid base64 image" });
-
-      const tempFilename = `temp_${uuidv4()}.png`;
-      tempFilePath = saveBase64Image(base64Data, tempFilename);
-    } else {
-      return res.status(400).json({
-        error: "Invalid image format. Expected base64 data URL like data:image/png;base64,...",
-      });
-    }
-
-    const imagePart = prepareImagePart(tempFilePath);
-
-    let editPrompt = `Edit this image: ${prompt}`;
-    if (String(preserveStyle) === "true") {
-      editPrompt += `. Maintain the original style and quality.`;
-    }
-    editPrompt += `. Produce high fidelity professional result.`;
-
-    const model = getImageModel();
-    const result = await model.generateContent([editPrompt, imagePart]);
-    const response = await result.response;
-
-    const images = [];
-    let textResponse = "";
-
-    const parts = response?.candidates?.[0]?.content?.parts || [];
-    for (const part of parts) {
-      if (part.inlineData?.data) {
-        const filename = `edited_${uuidv4()}.png`;
-        saveBase64Image(part.inlineData.data, filename);
-        images.push({
-          filename,
-          url: `/outputs/${filename}`,
-          base64: part.inlineData.data,
-        });
-      } else if (part.text) {
-        textResponse = part.text;
-      }
-    }
-
-    if (tempFilePath) cleanupFiles([tempFilePath]);
-
-    return res.json({
-      success: true,
-      message: textResponse || "Image edited successfully",
-      images,
-    });
-  } catch (error) {
-    console.error("Image to Image Error:", error);
-    return res.status(500).json({ error: error?.message || "Server error" });
+  // preflight CORS (biar POST dari FE aman)
+  if (req.method === "OPTIONS") {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    return res.status(204).end();
   }
+  if (path === "/api/trends/search") {
+    return res.status(200).json({ hit: "router", method: req.method });
+    }
+
+
+  // Router
+  if (path === "/api" && req.method === "GET") return apiIndex(req, res);
+  if (path === "/api/docs" && req.method === "GET") return docs(req, res);
+  if (path === "/api/health" && req.method === "GET") return health(req, res);
+  if (path === "/api/health/gemini") return healthGemini(req, res);
+    
+  if (path.startsWith("/api/trends/insights")) return trendsInsights(req, res);
+ if (path.startsWith("/api/trends/options")) return trendsOptions(req, res);
+    if (path.startsWith("/api/trends/generate-content")) return trendsGenerateContent(req, res);
+
+    if (path.startsWith("/api/image/generate")) return imageGenerate(req, res);
+    if (path.startsWith("/api/image/edit")) return imageEdit(req, res);
+    if (path.startsWith("/api/image/marketing")) return imageMarketing(req, res);
+
+  return res.status(404).json({ error: "Endpoint not found", path, method: req.method });
 }
