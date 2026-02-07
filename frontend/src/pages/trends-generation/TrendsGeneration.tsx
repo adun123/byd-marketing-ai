@@ -454,7 +454,7 @@ useEffect(() => {
   // ✅ restore juga hasil search biar ga perlu generate lagi
   if (saved.searchTrends) setSearchTrends(saved.searchTrends);
   if (saved.viral) setViral(saved.viral);
-  if (saved.selectedTerms) setSelectedTerms(saved.selectedTerms);
+  // if (saved.selectedTerms) setSelectedTerms(saved.selectedTerms);
 
   // ❌ jangan panggil onFetchSnapshot di sini
 }, []);
@@ -469,12 +469,12 @@ return (
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
         {/* LEFT FILTER */}
        {/* DESKTOP FILTER */}
-        <aside className="hidden lg:block lg:sticky lg:top-[72px] lg:self-start">
+        <aside className="hidden lg:block lg:sticky lg:top-[72px] lg:self-start relative z-20">
           <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-4 shadow-sm">
             <TrendsFilters
               value={form}
               onChange={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
-              onBrainstorm={onFetchSnapshot}
+              onBrainstorm={() => onFetchSnapshot()}
               isLoading={snapshotLoading || viralLoading}
             />
           </div>
