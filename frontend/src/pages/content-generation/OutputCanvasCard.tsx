@@ -316,6 +316,14 @@ async function handleApplyMaskEdit(
   }
 }
 
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onerror = () => reject(new Error("Failed to read file"));
+    r.onload = () => resolve(String(r.result || ""));
+    r.readAsDataURL(file);
+  });
+}
 
   
 // ini bagian edit (selected-aware)
@@ -354,15 +362,18 @@ async function handleSubmitEdit(target: GeneratedOutput) {
   setEditError(null);
 
   try {
-    const fd = new FormData();
-    fd.append("image", file); // backend single("image")
-    fd.append("prompt", p);
-    fd.append("preserveStyle", preserveStyle ? "true" : "false");
+    const dataUrl = await fileToDataUrl(file);
 
     const res = await fetch(`${API_BASE}/image/edit`, {
       method: "POST",
-      body: fd,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        image: dataUrl,                 // ✅ yang dibaca server
+        prompt: p,
+        preserveStyle: preserveStyle ? "true" : "false",
+      }),
     });
+
 
     if (!res.ok) {
       const t = await res.text().catch(() => "");
