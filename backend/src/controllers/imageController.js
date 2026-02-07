@@ -8,6 +8,11 @@ import {
   getImageInfo,
 } from "../utils/imageUtils.js";
 
+import { ai, IMAGE_MODEL } from "../config/getImageClients.js";
+
+
+
+
 export const enhancePrompt = async (req, res) => {
   try {
     const { prompt, style, purpose, language } = req.body;
@@ -178,62 +183,80 @@ Only return valid JSON, no markdown or extra text.`;
   }
 };
 
+function normalizeAspectRatio(a) {
+  const allowed = new Set([
+    "1:1",
+    "4:5",
+    "9:16",
+    "16:9",
+    "3:4",
+    "4:3",
+    "21:9",
+  ]);
+  return allowed.has(a) ? a : "1:1";
+}
+
 export const textToImage = async (req, res) => {
   try {
     const { prompt, style, aspectRatio, brand, numberOfResults } = req.body;
+    if (!prompt) return res.status(400).json({ error: "Prompt is required" });
 
-    if (!prompt) {
-      return res.status(400).json({ error: "Prompt is required" });
-    }
-
-    const numResults = Math.min(Math.max(parseInt(numberOfResults) || 1, 1), 4);
+    const numResults = Math.min(Math.max(Number(numberOfResults) || 1, 1), 10);
+    const aspect = normalizeAspectRatio(aspectRatio);
 
     let enhancedPrompt = `Create a professional marketing image: ${prompt}`;
     if (style) enhancedPrompt += `. Style: ${style}`;
     if (brand) enhancedPrompt += `. Brand: ${brand}`;
-    if (aspectRatio) enhancedPrompt += `. Aspect ratio: ${aspectRatio}`;
     enhancedPrompt += `. High quality, professional marketing content, suitable for advertising.`;
 
-    const model = getImageModel();
+    
     const allImages = [];
     let textResponse = "";
 
-    const generatePromises = Array.from({ length: numResults }, async (_, index) => {
-      const result = await model.generateContent(enhancedPrompt);
-      const response = await result.response;
+    for (let i = 0; i < numResults; i++) {
+      const slidePrompt =
+        `${enhancedPrompt}\n` +
+        `Carousel slide ${i + 1} of ${numResults}. ` +
+        `Make it visually distinct while keeping consistent brand style.`;
 
-      const images = [];
-      for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData) {
+      const resp = await ai.models.generateContent({
+        model: IMAGE_MODEL,
+        contents: slidePrompt,
+        config: {
+          responseModalities: ["TEXT", "IMAGE"],
+          imageConfig: { aspectRatio: aspect },
+        },
+      });
+
+      const parts = resp?.candidates?.[0]?.content?.parts || [];
+      for (const part of parts) {
+        if (part.inlineData?.data) {
           const filename = `generated_${uuidv4()}.png`;
           saveBase64Image(part.inlineData.data, filename);
-          images.push({
+
+          allImages.push({
             filename,
             url: `/outputs/${filename}`,
             base64: part.inlineData.data,
-            variant: index + 1,
+            variant: i + 1,
           });
         } else if (part.text && !textResponse) {
           textResponse = part.text;
         }
       }
-      return images;
-    });
-
-    const results = await Promise.all(generatePromises);
-    results.forEach((images) => allImages.push(...images));
+    }
 
     res.json({
       success: true,
-      message: textResponse || `Generated ${allImages.length} image(s) successfully`,
       images: allImages,
       prompt: enhancedPrompt,
       requestedCount: numResults,
       generatedCount: allImages.length,
+      usedAspectRatio: aspect,
     });
-  } catch (error) {
-    console.error("Text to Image Error:", error);
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error("TextToImage error:", err);
+    res.status(500).json({ error: err.message });
   }
 };
 

@@ -2,205 +2,35 @@ import { getGroundedModel, getTextModel } from "../config/gemini.js";
 
 const urlCache = new Map();
 
-// ini denny
-// async function resolveRedirectUrl(redirectUrl) {
-//   if (!redirectUrl || !redirectUrl.includes("vertexaisearch.cloud.google.com")) {
-//     return redirectUrl;
-//   }
+async function resolveRedirectUrl(redirectUrl) {
+  if (!redirectUrl || !redirectUrl.includes("vertexaisearch.cloud.google.com")) {
+    return redirectUrl;
+  }
 
-//   if (urlCache.has(redirectUrl)) {
-//     return urlCache.get(redirectUrl);
-//   }
+  if (urlCache.has(redirectUrl)) {
+    return urlCache.get(redirectUrl);
+  }
 
-//   try {
-//     const controller = new AbortController();
-//     const timeout = setTimeout(() => controller.abort(), 5000);
-
-//     const response = await fetch(redirectUrl, {
-//       method: "HEAD",
-//       redirect: "follow",
-//       signal: controller.signal,
-//     });
-
-//     clearTimeout(timeout);
-
-//     const resolvedUrl = response.url;
-//     urlCache.set(redirectUrl, resolvedUrl);
-//     return resolvedUrl;
-//   } catch (err) {
-//     return redirectUrl;
-//   }
-// }
-
-async function resolveRedirectUrl(inputUrl) {
-  if (!inputUrl) return inputUrl;
-
-  if (urlCache.has(inputUrl)) return urlCache.get(inputUrl);
-
-  const controllerFetch = (ms) => {
+  try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), ms);
-    return { controller, timeout };
-  };
+    const timeout = setTimeout(() => controller.abort(), 5000);
 
-  const tryFollow = async (method) => {
-    const { controller, timeout } = controllerFetch(8000);
-    try {
-      const resp = await fetch(inputUrl, {
-        method,
-        redirect: "follow",
-        signal: controller.signal,
-        headers: { "User-Agent": "Mozilla/5.0" },
-      });
-      clearTimeout(timeout);
-      return resp?.url || null;
-    } catch {
-      clearTimeout(timeout);
-      return null;
-    }
-  };
+    const response = await fetch(redirectUrl, {
+      method: "HEAD",
+      redirect: "follow",
+      signal: controller.signal,
+    });
 
-  const tryCanonicalFromHtml = async () => {
-    const { controller, timeout } = controllerFetch(9000);
-    try {
-      const resp = await fetch(inputUrl, {
-        method: "GET",
-        redirect: "follow",
-        signal: controller.signal,
-        headers: { "User-Agent": "Mozilla/5.0" },
-      });
-      clearTimeout(timeout);
+    clearTimeout(timeout);
 
-      const finalUrl = resp?.url || inputUrl;
-      const ct = (resp.headers.get("content-type") || "").toLowerCase();
-      if (!ct.includes("text/html")) return null;
-
-      const html = await resp.text();
-
-      // 1) canonical
-      const canon = html.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i)?.[1];
-      if (canon && canon.startsWith("http")) return canon;
-
-      // 2) og:url
-      const og = html.match(/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i)?.[1];
-      if (og && og.startsWith("http")) return og;
-
-      // 3) fallback ke url final hasil GET
-      return finalUrl;
-    } catch {
-      clearTimeout(timeout);
-      return null;
-    }
-  };
-
-  // (A) follow redirect dulu (HEAD lalu GET)
-  const headUrl = await tryFollow("HEAD");
-  const getUrl = headUrl || (await tryFollow("GET"));
-  const followed = getUrl || inputUrl;
-
-  // kalau sudah berubah, cukup
-  if (followed !== inputUrl) {
-    urlCache.set(inputUrl, followed);
-    return followed;
+    const resolvedUrl = response.url;
+    urlCache.set(redirectUrl, resolvedUrl);
+    return resolvedUrl;
+  } catch (err) {
+    return redirectUrl;
   }
-
-  // (B) kalau tidak berubah, coba canonical HTML (khusus situs yang sering begitu)
-  const host = (() => {
-    try {
-      return new URL(inputUrl).hostname.replace(/^www\./, "").toLowerCase();
-    } catch {
-      return "";
-    }
-  })();
-
-  const needsCanonical =
-    host.includes("katadata.co.id") ||
-    host.includes("otomotif.katadata.co.id") ||
-    host.includes("otosia.com") ||
-    host.includes("liputan6.com");
-
-  if (needsCanonical) {
-    const canonical = await tryCanonicalFromHtml();
-    const resolved = canonical || followed;
-    urlCache.set(inputUrl, resolved);
-    return resolved;
-  }
-
-  urlCache.set(inputUrl, followed);
-  return followed;
 }
 
-
-//dibagain biar :
-function allowedDomainsForPlatform(platformNorm) {
-  const p = (platformNorm || "").toLowerCase();
-  if (p.includes("instagram")) return ["instagram.com"];
-  if (p.includes("tiktok")) return ["tiktok.com", "vt.tiktok.com", "vm.tiktok.com", "m.tiktok.com"];
-  if (p.includes("youtube")) return ["youtube.com", "youtu.be"];
-  if (p.includes("linkedin")) return ["linkedin.com"];
-  return [];
-}
-
-
-
-// TikTok "video url" pattern yang kamu mau
-function isTikTokVideoUrl(url) {
-  if (!url) return false;
-  const u = String(url).toLowerCase();
-  // contoh: https://www.tiktok.com/@user/video/123
-  return u.includes("tiktok.com/@") && u.includes("/video/");
-}
-
-function enforcePlatformSources(trendsData, platformNorm) {
-  const domains = allowedDomainsForPlatform(platformNorm);
-  if (!domains.length) return trendsData;
-
-  const p = (platformNorm || "").toLowerCase();
-  const trends = Array.isArray(trendsData?.trends) ? trendsData.trends : [];
-
-  return {
-    ...trendsData,
-    trends: trends.map((t) => {
-      const sources = Array.isArray(t?.sources) ? t.sources : [];
-
-      // 1) filter domain sesuai platform
-      let kept = sources.filter((s) => urlMatchesDomains(s?.url, domains));
-
-      // 2) khusus tiktok: prioritas video url format @/video/
-      if (p.includes("tiktok")) {
-        const videoFirst = kept.filter((s) => isTikTokVideoUrl(s?.url));
-        kept = videoFirst.length ? videoFirst : kept;
-      }
-
-      return { ...t, sources: kept };
-    }),
-  };
-}
-
-function countPlatformUrls(trendsData, platformNorm) {
-  const domains = allowedDomainsForPlatform(platformNorm);
-  const trends = Array.isArray(trendsData?.trends) ? trendsData.trends : [];
-  let c = 0;
-  for (const t of trends) {
-    const sources = Array.isArray(t?.sources) ? t.sources : [];
-    for (const s of sources) {
-      if (urlMatchesDomains(s?.url, domains)) c++;
-    }
-  }
-  return c;
-}
-
-
-function urlMatchesDomains(url, domains) {
-  if (!url || !domains?.length) return true;
-  const u = String(url).toLowerCase();
-  return domains.some((d) => u.includes(d));
-}
-
-
-
-
-//ini denny
 async function resolveGroundingSources(sources) {
   if (!sources || !Array.isArray(sources)) return sources;
 
@@ -213,41 +43,6 @@ async function resolveGroundingSources(sources) {
 
   return resolved;
 }
-async function resolveTrendSourcesUrls(trendsData, platformNorm) {
-  if (!trendsData?.trends || !Array.isArray(trendsData.trends)) return trendsData;
-
-  // kumpulkan semua url sources
-  const all = [];
-  for (const t of trendsData.trends) {
-    if (!t?.sources || !Array.isArray(t.sources)) continue;
-    for (const s of t.sources) {
-      if (s?.url) all.push(s.url);
-    }
-  }
-
-  // resolve unique untuk hemat call
-  const uniq = Array.from(new Set(all));
-  const resolvedPairs = await Promise.all(
-    uniq.map(async (url) => [url, await resolveRedirectUrl(url)])
-  );
-  const map = new Map(resolvedPairs);
-
-  // tulis balik ke trendsData
-  trendsData.trends = trendsData.trends.map((t) => {
-    if (!t?.sources || !Array.isArray(t.sources)) return t;
-    return {
-      ...t,
-      sources: t.sources.map((s) => ({
-        ...s,
-        url: map.get(s.url) || s.url,
-      })),
-    };
-  });
-
-  return trendsData;
-}
-
-// ini maman nyoba meyesuaikan
 
 function extractJson(text = "") {
   const start = text.indexOf("{");
@@ -383,306 +178,287 @@ export const getTrendInsights = async (req, res) => {
   }
 };
 
-
-//khusus nyari trends:
-function normalizePlatform(p) {
-  const s = (p || "").toLowerCase();
-  if (s.includes("tiktok")) return "tiktok";
-  if (s.includes("youtube")) return "youtube";
-  if (s.includes("linkedin")) return "linkedin";
-  if (s.includes("instagram")) return "instagram";
-  // kalau gak jelas, biarkan null supaya prompt multi-platform
-  return null;
-}
-
-function normalizeTopic(t) {
-  const s = (t || "").toLowerCase();
-  // ini “contentType” kamu (soft-campaign, hard-sell, edu-ent) bukan industry.
-  // untuk konteks BYD, kita fallback automotive/ev.
-  if (!s) return "automotive";
-  if (s.includes("automotive") || s.includes("ev") || s.includes("vehicle") || s.includes("car")) return s;
-  if (s.includes("soft") || s.includes("hard") || s.includes("campaign") || s.includes("edu") || s.includes("ent")) {
-    return "automotive";
-  }
-  return s;
-}
-
-function isValidHttpUrl(u) {
-  if (!u || typeof u !== "string") return false;
-  return u.startsWith("http://") || u.startsWith("https://");
-}
-
-function uniqBy(arr, keyFn) {
-  const seen = new Set();
-  const out = [];
-  for (const x of arr || []) {
-    const k = keyFn(x);
-    if (!k || seen.has(k)) continue;
-    seen.add(k);
-    out.push(x);
-  }
-  return out;
-}
-
-function tokenize(s) {
-  return (s || "")
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/gi, " ")
-    .split(/\s+/)
-    .filter((w) => w.length >= 4);
-}
-
-function scoreTitleMatch(trendTitle, sourceTitle) {
-  const a = tokenize(trendTitle);
-  const b = tokenize(sourceTitle);
-  if (!a.length || !b.length) return 0;
-  const setB = new Set(b);
-  let hit = 0;
-  for (const w of a) if (setB.has(w)) hit++;
-  // skor sederhana: jumlah kata yang match
-  return hit;
-}
-
-function enrichTrendsSourcesFromGrounding(trendsData, groundingMetadata) {
-  const chunks = groundingMetadata?.groundingChunks || [];
-  const webSources = chunks
-    .map((c) => ({
-      title: c.web?.title,
-      url: c.web?.uri, // uri ini biasanya URL asli (lebih baik daripada vertex redirect di frontend)
-      platform: "news",
-    }))
-    .filter((s) => s.title && isValidHttpUrl(s.url));
-
-  const pool = uniqBy(webSources, (s) => s.url);
-
-  if (!trendsData?.trends?.length) return trendsData;
-
-  // dedupe URL lintas trend supaya gak sama semua
-  const used = new Set();
-
-  trendsData.trends = trendsData.trends.map((t) => {
-    const existing = (t.sources || []).filter((s) => isValidHttpUrl(s.url));
-    const existingUniq = uniqBy(existing, (s) => s.url).filter((s) => !used.has(s.url));
-
-    // kalau sudah ada sources valid → pakai dulu
-    if (existingUniq.length) {
-      existingUniq.forEach((s) => used.add(s.url));
-      return { ...t, sources: existingUniq.slice(0, 2) };
-    }
-
-    // kalau kosong → cari dari grounding pool yang paling match sama topic
-    const scored = pool
-      .map((s) => ({
-        s,
-        score: scoreTitleMatch(t.topic || t.keyTopic || "", s.title || ""),
-      }))
-      .filter((x) => x.score > 0 && !used.has(x.s.url))
-      .sort((a, b) => b.score - a.score);
-
-    if (scored.length) {
-      const picked = scored.slice(0, 2).map((x) => x.s);
-      picked.forEach((s) => used.add(s.url));
-      return { ...t, sources: picked };
-    }
-
-    // fallback terakhir: ambil source pertama yang belum dipakai
-    const fallback = pool.find((s) => !used.has(s.url));
-    if (fallback) {
-      used.add(fallback.url);
-      return { ...t, sources: [fallback] };
-    }
-
-    return t;
-  });
-
-  return trendsData;
-}
-
-// ✅ FIXED (Controller): 
-// 1) resolveTrendSourcesUrls dipanggil sekali saja.
-// 2) enforcePlatformSources dipanggil PALING TERAKHIR (final guard).
-// 3) kalau platform spesifik, grounding DIHILANGKAN (biar frontend tidak fallback ke web/blog).
-// 4) (opsional) filter grounding sources by domain kalau kamu tetap mau tampilkan.
-
+//diganti
+// controllers/trendsController.js
 export const searchTrends = async (req, res) => {
   try {
-    const { query, platform, topic, language } = req.body;
+    const {
+      query = "trending",
+      mode = "discover", // "discover" | "platform"
+      platform, // "instagram" | "tiktok" | "youtube" | "linkedin" | undefined
+      topic = "general",
+      language = "id",
+      country = "Indonesia",
+      days = 1,
+    } = req.body || {};
 
-    if (!query) return res.status(400).json({ error: "Query is required" });
+    if (!String(query).trim()) {
+      return res.status(400).json({ error: "Query is required" });
+    }
 
-    const lang = language || "en";
+    const lang = String(language || "id").toLowerCase();
     const langInstruction = lang === "id" ? "Respond in Indonesian" : "Respond in English";
 
-    const platformNorm = normalizePlatform(platform);
-    const topicNorm = normalizeTopic(topic);
+    const plat = String(platform || "").toLowerCase();
+    const windowDays = Number.isFinite(Number(days)) ? Math.max(1, Number(days)) : 3;
+    const nowIso = new Date().toISOString();
 
-    const platformFilter = platformNorm
-      ? `Focus on ${platformNorm} platform trends.`
-      : "Include trends from Instagram, TikTok, YouTube, LinkedIn.";
+    const safeMode = mode === "platform" ? "platform" : "discover";
+    const effectivePlatform = safeMode === "platform" ? (plat || "instagram") : "all";
 
-    const topicFilter = topicNorm ? `Focus on ${topicNorm} industry/topic.` : "";
+    // ---------- helpers ----------
+    const buildPlatformUrl = (p, keyword) => {
+      const kw = String(keyword || "").replace(/^#/, "").trim() || "trending";
+      const enc = encodeURIComponent(kw);
 
-    const searchPrompt = `Search for the latest viral trends and topics related to: "${query}"
-${platformFilter}
-${topicFilter}
+      if (p === "instagram") {
+        const tag = kw.replace(/\s+/g, "_");
+        return `https://www.instagram.com/explore/tags/${encodeURIComponent(tag)}/`;
+      }
+      if (p === "tiktok") {
+        // tiktok search pakai hashtag style biar user bisa klik
+        return `https://www.tiktok.com/search?q=${encodeURIComponent("#" + kw)}`;
+      }
+      if (p === "youtube") return `https://www.youtube.com/results?search_query=${enc}`;
+      if (p === "linkedin") return `https://www.linkedin.com/search/results/content/?keywords=${enc}`;
+      return `https://www.instagram.com/explore/tags/${encodeURIComponent(kw.replace(/\s+/g, "_"))}/`;
+    };
 
-${langInstruction}.
+    const normalizeHashtags = (arr) => {
+      const raw = Array.isArray(arr) ? arr : [];
+      // simpan tanpa '#', karena UI kamu mau “terms tanpa #”
+      const cleaned = raw
+        .map((h) => String(h || "").trim())
+        .filter(Boolean)
+        .map((h) => h.replace(/^#/, "").trim())
+        .filter(Boolean);
+      // dedupe
+      return Array.from(new Set(cleaned)).slice(0, 5);
+    };
 
-Return a JSON object with this exact structure:
+    const inferSentiment = (t) => {
+      const s = t?.sentiment || {};
+      const label = String(s.label || "").toLowerCase().trim();
+      if (label === "negative" || label.includes("neg")) return "negative";
+      if (label === "neutral" || label.includes("neu") || label.includes("mix")) return "neutral";
+      if (label === "positive" || label.includes("pos")) return "positive";
+
+      const pos = typeof s.positive === "number" ? s.positive : undefined;
+      const neg = typeof s.negative === "number" ? s.negative : undefined;
+      const neu = typeof s.neutral === "number" ? s.neutral : undefined;
+      if (pos != null && neg != null && neu != null) {
+        const m = Math.max(pos, neg, neu);
+        if (m === neg) return "negative";
+        if (m === neu) return "neutral";
+        return "positive";
+      }
+      // default netral biar UI gak bias “positive mulu”
+      return "neutral";
+    };
+
+    const clamp01 = (n) => {
+      const x = Number(n);
+      if (!Number.isFinite(x)) return 0.7;
+      return Math.max(0, Math.min(1, x));
+    };
+
+    const buildPrompt = () => {
+      // NOTE: kita sengaja “nggak maksa publishedAt harus ada”,
+      // karena halaman platform-native kadang gak punya tanggal jelas.
+      // Kita tetap minta evidence URL. Tanggal jadi optional.
+
+      const modeBlock =
+        safeMode === "discover"
+          ? `
+Mode = DISCOVER (viral umum, lintas platform).
+Goal: kumpulkan topik yang lagi meledak dibicarakan (news + social buzz), lalu untuk tiap item berikan platformHint (IG/TikTok/YT/LinkedIn) buat step berikutnya.
+DO NOT lock to a single platform.
+`
+          : `
+Mode = PLATFORM DRILLDOWN.
+Goal: dari topik/query, keluarkan viral items yang relevan khusus platform: ${effectivePlatform}.
+Prioritize platform-native surfaces (hashtag/search/audio pages) and recent recaps. Avoid evergreen SEO.
+`;
+
+      const platformRules =
+        safeMode === "platform"
+          ? `
+Platform targeting rules:
+- instagram: prioritize "instagram.com/explore/tags" and reels trends
+- tiktok: prioritize "tiktok.com" hashtag/search/sound and updated charts
+- youtube: prioritize Shorts trends / recent topics
+- linkedin: prioritize viral discussions/posts
+`
+          : `
+Cross-platform rules:
+- combine signals from news + social platforms
+- for each item set platformHint.platform = instagram/tiktok/youtube/linkedin (best fit)
+`;
+
+      return `
+You have access to Google Search tool. You MUST use it.
+
+${modeBlock}
+
+Context:
+- now: ${nowIso}
+- window: last ${windowDays} days
+- region: ${country}
+- query: "${query}"
+- topic: "${topic}"
+- language: ${lang}
+
+Hard rules:
+1) Focus on what is CURRENT and VIRAL within the last ${windowDays} days.
+2) Provide 7-10 items. If uncertain, still return best candidates, but keep them plausible and current.
+3) Each trend MUST include at least 1 evidence URL. publishedAt is OPTIONAL because some platform pages don't show it.
+4) Output VALID JSON only. No markdown.
+
+${platformRules}
+
+JSON schema (exact):
 {
+  "success": true,
+  "query": "${query}",
+  "platform": "${effectivePlatform}",
+  "topic": "${topic}",
+  "language": "${lang}",
+  "searchedAt": "${nowIso}",
+  "summary": "...",
   "trends": [
     {
-      "topic": "Full topic name/title",
-      "keyTopic": "OneWordKeyword",
-      "scale": 0.85,
-      "sentiment": {
-        "positive": 5,
-        "negative": 70,
-        "neutral": 15,
-        "label": "positive"
-      },
-      "sources": [
-        {
-          "title": "Source article/post title",
-          "url": "https://example.com/article",
-          "platform": "${platformNorm || "instagram|tiktok|youtube|linkedin"}"
-        }
+      "topic": "Short title",
+      "keyTopic": "CamelCaseKeyword",
+      "scale": 0.0,
+      "sentiment": { "positive": 0, "negative": 0, "neutral": 0, "label": "positive|neutral|negative" },
+      "hashtags": ["tag1","tag2","tag3"],
+      "engagement": { "estimated": "high|medium|low", "reason": "..." },
+      "observedAt": "${nowIso}",
+      "evidence": [
+        { "title": "...", "url": "https://...", "publishedAt": "YYYY-MM-DD" }
       ],
-      "description": "Brief description of why this is trending",
-      "category": "automotive|lifestyle|technology|entertainment|news",
-      "engagement": {
-        "estimated": "high|medium|low",
-        "reason": "Why this has high/medium/low engagement"
-      }
+      "platformHint": { "platform": "instagram|tiktok|youtube|linkedin", "query": "best keyword/hashtag" }
     }
-  ],
-  "summary": "Overall trend summary",
-  "searchedAt": "timestamp",
-  "totalFound": 5
+  ]
 }
 
-Find 5-10 relevant trending topics. Scale is 0.0-1.0 representing trend strength.
+${langInstruction}
+`;
+    };
 
-${platformNorm ? `
-IMPORTANT:
-- In "sources", return links ONLY from the ${platformNorm} domain:
-  - instagram: instagram.com/p/ or instagram.com/reel/
-  - tiktok: tiktok.com/ (vt.tiktok.com / vm.tiktok.com allowed)
-  - youtube: youtube.com/watch or youtu.be/
-  - linkedin: linkedin.com/
-- If you cannot find enough ${platformNorm} links, keep "sources" as an empty array for that trend (do NOT fill with news/blog).
-- Do NOT substitute web/news/blog/youtube links when platform is provided.
-` : ""}
-
-Only return valid JSON, no markdown.`;
-
+    // ---------- call model ----------
     const model = getGroundedModel();
-    const result = await model.generateContent(searchPrompt);
+    const result = await model.generateContent(buildPrompt());
     const response = await result.response;
     const text = response.text();
 
-    let trendsData;
-
+    // parse JSON
+    let data;
     try {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error("No JSON found");
-
-      trendsData = JSON.parse(jsonMatch[0]);
-
-      // ✅ 1) enforce dulu
-      trendsData = enforcePlatformSources(trendsData, platformNorm);
-
-      // ✅ 2) retry khusus tiktok jika 0 link tiktok (opsional)
-      const isTikTok = (platformNorm || "").toLowerCase() === "tiktok";
-      if (isTikTok && countPlatformUrls(trendsData, platformNorm) === 0) {
-        const retryPrompt = `Find TikTok viral trends for: "${query}"
-Return ONLY valid JSON with the same structure as before.
-CRITICAL:
-- sources.url MUST be TikTok video links only:
-  https://www.tiktok.com/@<username>/video/<id>
-  or https://vt.tiktok.com/... / https://vm.tiktok.com/...
-- Do NOT include web/news/blog/youtube links.
-- If you can't find a TikTok link, set sources to [].
-${langInstruction}.
-Only return valid JSON, no markdown.`;
-
-        const retryResult = await model.generateContent(retryPrompt);
-        const retryResp = await retryResult.response;
-        const retryText = retryResp.text();
-        const retryMatch = retryText.match(/\{[\s\S]*\}/);
-        if (retryMatch) {
-          const retryJson = JSON.parse(retryMatch[0]);
-          trendsData = enforcePlatformSources(retryJson, platformNorm);
-        }
-      }
-
-      // ✅ 3) resolve redirect (sekali saja)
-      trendsData = await resolveTrendSourcesUrls(trendsData, platformNorm);
-
-      // ✅ 4) final guard: enforce paling terakhir
-      trendsData = enforcePlatformSources(trendsData, platformNorm);
-
-    } catch (parseError) {
-      trendsData = { trends: [], summary: "Unable to parse trends data", raw: text };
+      data = JSON.parse(jsonMatch[0]);
+    } catch (e) {
+      return res.status(502).json({ error: "Failed to parse AI JSON output", raw: text });
     }
 
-    // ✅ Grounding: jangan kirim kalau platform spesifik (biar frontend gak fallback ke web/blog)
-    let grounding = null;
-    if (!platformNorm) {
-      const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
-      if (groundingMetadata) {
-        const rawSources =
-          groundingMetadata.groundingChunks?.map((chunk) => ({
-            title: chunk.web?.title,
-            uri: chunk.web?.uri,
-          })) || [];
+    const rawTrends = Array.isArray(data?.trends) ? data.trends : [];
 
-        const resolvedSources = await resolveGroundingSources(rawSources);
+    // ---------- normalize output for your frontend ----------
+    const normalizedTrends = rawTrends
+      .slice(0, 10)
+      .map((t, idx) => {
+        const hintPlatform = String(t?.platformHint?.platform || "").toLowerCase();
+        const chosenPlatform =
+          safeMode === "platform"
+            ? effectivePlatform
+            : (hintPlatform === "instagram" || hintPlatform === "tiktok" || hintPlatform === "youtube" || hintPlatform === "linkedin")
+              ? hintPlatform
+              : "instagram";
 
-        grounding = {
-          searchQueries: groundingMetadata.webSearchQueries,
-          sources: resolvedSources,
+        const hashtags = normalizeHashtags(t?.hashtags);
+        const kw =
+          String(t?.keyTopic || "").trim() ||
+          String(t?.platformHint?.query || "").trim() ||
+          (hashtags[0] ? hashtags[0] : "") ||
+          String(t?.topic || "").trim() ||
+          String(query).trim();
+
+        const sentimentLabel = inferSentiment(t);
+
+        // kalau model ngasih angka, keep, kalau enggak isi default seimbang
+        const pos = typeof t?.sentiment?.positive === "number" ? t.sentiment.positive : (sentimentLabel === "positive" ? 70 : 35);
+        const neg = typeof t?.sentiment?.negative === "number" ? t.sentiment.negative : (sentimentLabel === "negative" ? 60 : 15);
+        const neu = typeof t?.sentiment?.neutral === "number" ? t.sentiment.neutral : 100 - Math.min(100, pos + neg);
+
+        return {
+          topic: String(t?.topic || kw || `Trend ${idx + 1}`),
+          keyTopic: String(t?.keyTopic || kw).replace(/\s+/g, "").trim() || `Trend${idx + 1}`,
+          scale: clamp01(t?.scale ?? 0.75),
+          sentiment: {
+            positive: Math.max(0, Math.min(100, Math.round(pos))),
+            negative: Math.max(0, Math.min(100, Math.round(neg))),
+            neutral: Math.max(0, Math.min(100, Math.round(neu))),
+            label: sentimentLabel,
+          },
+          hashtags, // tanpa '#'
+          engagement: {
+            estimated: t?.engagement?.estimated || "medium",
+            reason: t?.engagement?.reason || "Based on current buzz and repeat mentions across sources.",
+          },
+          observedAt: t?.observedAt || nowIso,
+          evidence: Array.isArray(t?.evidence)
+            ? t.evidence
+                .filter((e) => e?.url)
+                .slice(0, 2)
+                .map((e) => ({
+                  title: e?.title || "Evidence",
+                  url: e?.url,
+                  publishedAt: e?.publishedAt || null,
+                }))
+            : [],
+          platformHint: {
+            platform: chosenPlatform,
+            query: String(t?.platformHint?.query || kw || query),
+          },
+          platform: chosenPlatform,
+          platformUrl: buildPlatformUrl(chosenPlatform, kw),
         };
-      }
-    }
+      })
+      // pastikan minimal ada evidence URL (kalau kosong, buang)
+      .filter((t) => Array.isArray(t.evidence) && t.evidence.some((e) => e?.url));
 
     return res.json({
       success: true,
-      query,
-      platform: platformNorm || "all",
-      topic: topicNorm || "general",
-      ...trendsData,
-      grounding,
+      query: String(query),
+      platform: effectivePlatform,
+      topic: String(topic || "general"),
+      language: lang,
+      searchedAt: nowIso,
+      daysUsed: windowDays,
+      windowLabel: windowDays === 1 ? "24h" : `${usedDays}d`,
+      totalFound: normalizedTrends.length,
+      summary: data?.summary || "",
+      trends: normalizedTrends,
+      // grounding metadata tetap boleh kamu pass-through kalau mau
+      grounding: data?.grounding ?? null,
     });
-
   } catch (error) {
     console.error("Search Trends Error:", error);
     return res.status(500).json({ error: error.message });
   }
 };
-``
 
 
-      // const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
 
-      // const rawSources = groundingMetadata?.groundingChunks?.map(chunk => ({
-      //   title: chunk.web?.title,
-      //   uri: chunk.web?.uri,
-      // })) || [];
 
-      // const resolvedSources = await resolveGroundingSources(rawSources);
 
-      // res.json({
-      //   success: true,
-      //   query,
-      //   platform: platform || "all",
-      //   topic: topic || "general",
-      //   ...trendsData,
-      //   grounding: groundingMetadata ? {
-      //     searchQueries: groundingMetadata.webSearchQueries,
-      //     sources: resolvedSources,
-      //   } : null,
-      // });
+
+
+
+
+
+
 export const generateTrendContent = async (req, res) => {
   try {
     const {
