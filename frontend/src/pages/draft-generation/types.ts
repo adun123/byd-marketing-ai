@@ -22,7 +22,7 @@ export type GenerateContentResponse = {
 
   visualDescription?: {
     photo?: { prompt?: string; style?: string; aspectRatio?: string };
-    video?: { prompt?: string; style?: string; duration?: string; aspectRatio?: string };
+    video?: { prompt?: string; style?: string; duration?: string; onGenerate?: string };
   };
 
   hashtags?: string[];
