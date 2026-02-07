@@ -179,12 +179,18 @@ export type ViralSnippetItem = {
 export type DraftContextPayload = {
   form: TrendsForm;
   snapshot?: TrendSnapshot | null;
+
+  // ✅ add
+  searchTrends?: SearchTrendsResponse | null;
+  viral?: ViralSnippetItem[]; // sesuaikan tipe kamu (yang dipakai UI)
+
   derived: {
     terms: string[];
     topSentiment: Array<{ name: string; sentiment: Sentiment; score: number }>;
   };
   selectedTerms: string[];
 };
+
 
 /** ---------- Output ideas (kalau masih dipakai) ---------- */
 

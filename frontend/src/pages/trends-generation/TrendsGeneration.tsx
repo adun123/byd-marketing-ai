@@ -20,6 +20,7 @@ import type {
   TrendSnapshot,
   TrendsForm,
   ViralSnippetItem,
+  
 } from "./types";
 
 /** Clamp number into [a..b] range (default 0..100). */
@@ -252,6 +253,7 @@ async function parseJsonSafe(res: Response) {
 // }
 
 export default function TrendsGeneration() {
+  
   const navigate = useNavigate();
 
   const API_BASE = useMemo(
@@ -324,6 +326,8 @@ export default function TrendsGeneration() {
     return {
       form,
       snapshot: snap,
+      searchTrends,
+      viral,
       derived: {
         terms: baseTerms,
         topSentiment: snap?.topSentiment?.length ? snap.topSentiment : fallbackSentiment,
@@ -333,15 +337,13 @@ export default function TrendsGeneration() {
   }
 
   /** Persist draft context to localStorage when meaningful state changes. */
-  useEffect(() => {
-    // jangan simpan kosong
-    if (!snapshot && (!searchTrends || !viral || viral.length === 0)) return;
+useEffect(() => {
+  if (!snapshot && (!searchTrends || !viral || viral.length === 0)) return;
 
+  const ctx = buildDraftContext();
+  saveDraftContext(ctx);
+}, [form, snapshot, searchTrends, viral, selectedTerms]);
 
-    const ctx = buildDraftContext();
-    saveDraftContext(ctx);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, snapshot, viral, selectedTerms]);
 
   /* Fetch insights snapshot + trends search in parallel (settled). */
 async function onFetchSnapshot(formOverride?: typeof form) {
@@ -449,14 +451,14 @@ useEffect(() => {
   if (saved.form) setForm(saved.form);
   if (saved.snapshot) setSnapshot(saved.snapshot);
 
-  // ✅ rebuild search/viral immediately with restored form
-  if (saved.form) {
-    onFetchSnapshot(saved.form);
-  } else {
-    onFetchSnapshot();
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // ✅ restore juga hasil search biar ga perlu generate lagi
+  if (saved.searchTrends) setSearchTrends(saved.searchTrends);
+  if (saved.viral) setViral(saved.viral);
+  if (saved.selectedTerms) setSelectedTerms(saved.selectedTerms);
+
+  // ❌ jangan panggil onFetchSnapshot di sini
 }, []);
+
 
 return (
   <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950">
