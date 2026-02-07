@@ -13,6 +13,8 @@ function cn(...s: Array<string | undefined | false>) {
   return s.filter(Boolean).join(" ");
 }
 
+
+
 type SourceMode = "trend" | "manual";
 
 type Props = {
@@ -67,7 +69,7 @@ const hasSelectedTerms = (draftCtx?.selectedTerms?.length ?? 0) > 0;
   const [keywords, setKeywords] = useState("");
 
   // slide count
-  const [slides] = useState(8);
+  const [slides] = useState(1);
   
   function humanizeTerm(term: string) {
     return term
@@ -92,8 +94,13 @@ const hasSelectedTerms = (draftCtx?.selectedTerms?.length ?? 0) > 0;
   const [language, setLanguage] = useState<"id" | "en">("id");
 
 useEffect(() => {
-  setTerms(initialTerms);
+  setTerms((prev) =>
+    JSON.stringify(prev) === JSON.stringify(initialTerms)
+      ? prev
+      : initialTerms
+  );
 }, [initialTerms]);
+
 
 
   function toggleAudience(a: string) {
@@ -203,9 +210,12 @@ useEffect(() => {
                 h-10 w-full rounded-xl border px-3 text-[12px]
                 border-slate-200/80 dark:border-slate-800/80
                 bg-white dark:bg-slate-950
-                outline-none focus:ring-2 focus:ring-[#068773]/20
+                text-slate-900 dark:text-slate-100
+                placeholder:text-slate-400 dark:placeholder:text-slate-500
+                outline-none focus:ring-2 focus:ring-[#068773]/20 dark:focus:ring-emerald-400/20
               "
             />
+
           )}
         </section>
 

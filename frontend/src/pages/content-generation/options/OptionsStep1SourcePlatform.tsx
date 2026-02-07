@@ -26,7 +26,7 @@ export default function OptionsStep1SourcePlatform({
  
   aspect,
   onChange,
-
+  workflow,
   platform: platformProp = "instagram",
   onPlatformChange,
 
@@ -50,7 +50,7 @@ export default function OptionsStep1SourcePlatform({
     if (onPlatformChange) onPlatformChange(p);
     else setPlatformLocal(p);
   }
-
+  const draftDisabled = workflow !== "text_to_image";
   return (
     <div className="space-y-3">
       {/* SOURCE MODE */}
@@ -59,7 +59,10 @@ export default function OptionsStep1SourcePlatform({
           <ModeTab
             active={sourceMode === "draft"}
             label="Draft Script"
-            onClick={() => onSourceModeChange("draft")}
+            disabled={draftDisabled}
+            onClick={() => {
+              if (!draftDisabled) onSourceModeChange("draft");
+            }}
           />
           <ModeTab
             active={sourceMode === "manual"}
@@ -181,7 +184,7 @@ export default function OptionsStep1SourcePlatform({
             </div>
 
             <div className="mt-2 text-[10px] text-slate-500 dark:text-slate-400">
-              Tip: 9:16 for stories & shorts, 1:1 or 4:5 for feeds.
+              
             </div>
           </div>
         </div>
@@ -192,30 +195,23 @@ export default function OptionsStep1SourcePlatform({
 
 /* ---------- Small components ---------- */
 
-function ModeTab({
-  active,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-}) {
+function ModeTab({ active, label, onClick, disabled }: { active: boolean; label: string; onClick: () => void; disabled?: boolean }) {
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={onClick}
       className={cn(
-        "rounded-2xl px-3 py-2 text-[11px] font-semibold transition",
-        active
-          ? "bg-gradient-to-r from-[#068773] to-[#0fb9a8] text-white shadow-sm"
-          : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+        "rounded-xl px-3 py-2 text-[11px] font-semibold transition",
+        active ? "bg-white dark:bg-slate-900 shadow-sm" : "text-slate-600 dark:text-slate-300 hover:bg-white/70 dark:hover:bg-slate-900/60",
+        disabled && "opacity-40 cursor-not-allowed hover:bg-transparent dark:hover:bg-transparent"
       )}
     >
       {label}
     </button>
   );
 }
+
 
 const platforms: Array<{ id: Platform; label: string; icon: React.ReactNode }> = [
   { id: "instagram", label: "Instagram", icon: <Instagram className="h-4 w-4" /> },

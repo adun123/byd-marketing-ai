@@ -5,6 +5,9 @@ import { Image as ImageIcon, Video as VideoIcon } from "lucide-react";
 export type ContentGenTab = "image" | "video";
 export type ImageCategory = "infographic" | "carousel";
 
+
+export type Workflow = "text_to_image" | "image_to_image" | "upscale" ;
+
 type SideNavProps = {
   value: ContentGenTab;
   onSelect: (tab: ContentGenTab) => void;
@@ -16,6 +19,7 @@ type SideNavProps = {
 
   slides: number;
   onSlidesChange: (n: number) => void;
+   workflow: Workflow;
 };
 
 function cn(...s: Array<string | undefined | false>) {
@@ -26,6 +30,7 @@ export default function SideNav({
   value,
   onSelect,
   className,
+  workflow,
 
   imageCategory,
   onImageCategoryChange,
@@ -33,7 +38,10 @@ export default function SideNav({
   onSlidesChange,
 }: SideNavProps) {
   const isImage = value === "image";
-  const isCarousel = imageCategory === "carousel";
+  
+  
+  const carouselDisabled = workflow === "image_to_image";
+  const isCarousel = imageCategory === "carousel" && !carouselDisabled;
 
   return (
     <aside
@@ -104,14 +112,18 @@ export default function SideNav({
                   active={imageCategory === "carousel"}
                   title="Carousel"
                   desc="Multi-slide"
-                  onClick={() => onImageCategoryChange("carousel")}
+                  disabled={carouselDisabled}
+                  onClick={() => {
+                    if (!carouselDisabled) onImageCategoryChange("carousel");
+                  }}
                 />
+
               </div>
             </div>
 
             {/* Slides (only if carousel) */}
-            {isCarousel ? (
-              <div className="rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-white dark:bg-slate-950 p-3">
+          {isCarousel ? (
+  <div className="rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-white dark:bg-slate-950 p-3">
                 <div className="flex items-center justify-between">
                   <div className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
                     Slides
@@ -197,27 +209,42 @@ function RadioChip({
   title,
   desc,
   onClick,
+  disabled = false,
 }: {
   active: boolean;
   title: string;
   desc: string;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={() => {
+        if (!disabled) onClick();
+      }}
+      disabled={disabled}
       className={cn(
         "w-full rounded-2xl border px-3 py-3 text-left transition",
         "focus:outline-none focus:ring-2 focus:ring-[#068773]/20",
-        active
+        disabled && "cursor-not-allowed opacity-40",
+        active && !disabled
           ? "border-[#068773]/25 bg-[#068773]/10"
-          : "border-slate-200/70 dark:border-slate-800/70 bg-white dark:bg-slate-950 hover:bg-slate-50 dark:hover:bg-slate-900/60"
+          : !disabled
+          ? "border-slate-200/70 dark:border-slate-800/70 bg-white dark:bg-slate-950 hover:bg-slate-50 dark:hover:bg-slate-900/60"
+          : "border-slate-200/70 dark:border-slate-800/70 bg-white dark:bg-slate-950"
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className={cn("text-[12px] font-semibold", active ? "text-slate-900 dark:text-white" : "text-slate-900 dark:text-slate-50")}>
+          <div
+            className={cn(
+              "text-[12px] font-semibold",
+              active && !disabled
+                ? "text-slate-900 dark:text-white"
+                : "text-slate-900 dark:text-slate-50"
+            )}
+          >
             {title}
           </div>
           <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
@@ -228,12 +255,14 @@ function RadioChip({
         <span
           className={cn(
             "mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full border",
-            active
+            active && !disabled
               ? "border-[#068773] bg-[#068773]"
               : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950"
           )}
         >
-          {active ? <span className="h-1.5 w-1.5 rounded-full bg-white" /> : null}
+          {active && !disabled ? (
+            <span className="h-1.5 w-1.5 rounded-full bg-white" />
+          ) : null}
         </span>
       </div>
     </button>

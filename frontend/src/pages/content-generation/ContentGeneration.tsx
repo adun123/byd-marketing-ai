@@ -294,6 +294,15 @@ useEffect(() => {
   });
 }, [aspect, imageCategory, slides, platform]);
 
+useEffect(() => {
+  if (workflow === "image_to_image") {
+    // paksa single image
+    setImageCategory("infographic");
+    setSlides(1);
+  }
+}, [workflow]);
+
+
 
 return (
   <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950 flex flex-col">
@@ -316,13 +325,15 @@ return (
           <aside className="lg:sticky lg:top-[72px] lg:self-start">
             <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-4 shadow-sm">
              <SideNav
-                value={tab}
-                onSelect={setTab}
-                imageCategory={imageCategory}
-                onImageCategoryChange={setImageCategory}
-                slides={slides}
-                onSlidesChange={setSlides}
-              />
+              value={tab}
+              onSelect={setTab}
+              imageCategory={imageCategory}
+              onImageCategoryChange={setImageCategory}
+              slides={slides}
+              onSlidesChange={setSlides}
+              workflow={workflow}   // 👈 TAMBAH INI
+            />
+
 
             </div>
 

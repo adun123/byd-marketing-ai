@@ -1,5 +1,5 @@
 // src/pages/content-generation/OptionsPanel.tsx
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import OptionsStep1SourcePlatform, { type SourceMode } from "./OptionsStep1SourcePlatform";
 import OptionsStep2CreativeModeStyle from "./OptionsStep2CreativeModeStyle";
 import OptionsStep3PromptInput from "./OptionsStep3PromptInput";
@@ -128,18 +128,30 @@ export default function OptionsPanel({
     onGenerate(effectivePrompt);
   };
 
+
+  useEffect(() => {
+    if (workflow !== "text_to_image" && sourceMode === "draft") {
+      onSourceModeChange("manual");
+    }
+  }, [workflow, sourceMode, onSourceModeChange]);
+
+
   // ✅ validasi pakai effectivePrompt (bukan prompt state doang)
-  const promptOk = effectivePrompt.trim().length >= 2;
-  const hasRef = attachments.length >= 1;
+ const promptOk = effectivePrompt.trim().length >= 2;
+
+  const hasMinForI2I = attachments.length >= 2; // ✅ wajib 2
+  const hasMinForUpscale = attachments.length >= 1;
 
   const disabledGenerate =
     workflow === "text_to_image"
       ? !promptOk
       : workflow === "image_to_image"
-      ? !(promptOk && hasRef)
+      ? !(promptOk && hasMinForI2I)
       : workflow === "upscale"
-      ? !hasRef
+      ? !hasMinForUpscale
       : true;
+
+      
 
   return (
     <div className="space-y-4">
@@ -153,9 +165,16 @@ export default function OptionsPanel({
         }}
         sourceMode={sourceMode}
         onSourceModeChange={(m) => {
+          // draft mode cuma buat text_to_image
+          if (m === "draft" && workflow !== "text_to_image") return;
+
           onSourceModeChange(m);
-          if (m === "draft" && draftVisualPrompt) onPromptChange(draftVisualPrompt);
+
+          if (m === "draft" && workflow === "text_to_image" && draftVisualPrompt) {
+            onPromptChange(draftVisualPrompt);
+          }
         }}
+
         scriptPreview={sourceMode === "draft" ? previewText : "Manual mode."}
         platform={platform}
         onPlatformChange={onPlatformChange}
@@ -212,7 +231,7 @@ export default function OptionsPanel({
 
         <div className="max-h-40 overflow-y-auto whitespace-pre-wrap break-words">
           {previewText?.trim() ? (
-            <span className="italic">“{previewText}”</span>
+            <span className="italic"></span>
           ) : (
             <span className="text-slate-400">No script imported.</span>
           )}

@@ -223,7 +223,7 @@ export default function ScriptEditorCard({
   return (
     <div>
       {/* Title */}
-      <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold text-slate-900 dark:text-slate-50">
+      <div className="mb-2 flex mt-5 items-center gap-2 text-[12px] font-semibold text-slate-900 dark:text-slate-50">
         <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-[#068773]/10 text-[#068773]">
           ▤
         </span>

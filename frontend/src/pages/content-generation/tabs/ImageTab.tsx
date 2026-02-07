@@ -158,6 +158,34 @@ function handleClearCanvas() {
   setPreview?.(null);
 }
 
+function handleResetAll() {
+  const ok = window.confirm("Reset semua pengaturan & hasil? (Canvas, prompt, gambar, opsi)");
+  if (!ok) return;
+
+  // 1) Canvas
+  setItems([]);
+  setSelectedItem?.(null);
+  setPreview?.(null);
+
+  // 2) Attachments
+  setAttachments((prev) => {
+    prev.forEach((x) => URL.revokeObjectURL(x.previewUrl));
+    return [];
+  });
+
+  // 3) Prompt + mode
+  setPrompt("");
+  setSourceMode("manual");
+
+  // 4) Options basic
+  setWorkflow("text_to_image");
+  setVisualStyle("clean");
+  setAspect("1:1");
+  setPlatform("instagram");
+}
+
+
+
 function isSideNavReady(params: {
   workflow: string;
   visualStyle: string;
@@ -236,13 +264,16 @@ const canPreview = ready && items.length > 0 && !isGenerating;
               onAddItems={(newOnes) => setItems((prev) => [...newOnes, ...prev])}
               aspect={aspect}
               isGenerating={isGenerating}
-              onClear={handleClearCanvas}
+              onClear={handleResetAll}
               onScaleUp={(it) => console.log("scale up", it)}
               onSaveDraft={(it) => console.log("save draft", it)}
               onExport={(it) => console.log("export", it)}
               onDownload={(src, filename) => onDownload({ src, filename })}
               metaLeft={aspectMeta(aspect)}
-              metaMid="2.4 MB"
+              metaMid=""
+               onDeleteItem={(id) => {
+                setItems((prev) => prev.filter((x) => x.id !== id));
+              }}
             />
 
             {/* CTA -> Preview Generator */}

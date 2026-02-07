@@ -21,6 +21,7 @@ type CanvasItem = GeneratedOutput;
 type Props = {
   title?: string;
   subtitle?: string;
+  onDeleteItem?: (id: string) => void;
 
   API_BASE: string; // NEW: buat hit /image/edit
   items: CanvasItem[];
@@ -84,6 +85,7 @@ export default function OutputCanvasCard({
   metaLeft = "1080 x 1080",
   metaMid = "—",
  isGenerating ,
+ onDeleteItem,
 }: Props) {
   const latest = items?.[0];
   
@@ -484,8 +486,21 @@ async function handleSubmitEdit(target: GeneratedOutput) {
   URL.revokeObjectURL(url);
 }
 
-// ini edit mask:
+// ini hapus per foto mask:
 
+const handleDeleteSelected = () => {
+  if (!selected) return;
+
+  // pilih next selection yang aman
+  const idx = items.findIndex((x) => x.id === selected.id);
+  const next = items[idx + 1] || items[idx - 1] || null;
+
+  // panggil parent untuk hapus
+  onDeleteItem?.(selected.id);
+
+  // update selectedId supaya UI gak nyangkut
+  setSelectedId(next?.id ?? null);
+};
 
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 shadow-sm">
@@ -624,55 +639,78 @@ async function handleSubmitEdit(target: GeneratedOutput) {
                       </div>
                     )}
 
-                    {/* Hover actions (Mask + Download) */}
+                    {/* Hover actions: Delete (top-right) + Mask/Save (bottom-center) */}
+                   
                     {selectedSrc && selected ? (
-                      <div
-                        className={cn(
-                          "absolute right-2 top-2 z-20 flex items-center gap-1.5",
-                          "opacity-0 group-hover:opacity-100 transition"
-                        )}
-                      >
-                        {/* Mask */}
+                      <>
+                        {/* Delete (top-right) */}
                         <button
                           type="button"
-                          onClick={() => {
-                            setMaskPrompt("Hapus objek yang di-mask, isi background tetap natural dan realistis.");
-                            setIsMasking(true);
-                            setSelectedId(selected.id);
-                          }}
+                          onClick={handleDeleteSelected}
                           className={cn(
-                            "inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5",
+                            "absolute right-2 top-2 z-20 inline-flex items-center justify-center",
+                            "h-9 w-9 rounded-2xl",
                             "border border-slate-200/70 dark:border-slate-800/70",
                             "bg-white/90 dark:bg-slate-950/70 backdrop-blur",
-                            "text-[11px] font-semibold text-slate-700 dark:text-slate-200",
+                            "text-slate-700 dark:text-slate-200",
+                            "opacity-0 group-hover:opacity-100 transition",
                             "hover:bg-white dark:hover:bg-slate-900"
                           )}
-                          title="Mask edit"
+                          title="Delete image"
                         >
-                          <Pencil className="h-3.5 w-3.5" />
-                          Mask
+                          <Trash2 className="h-4 w-4" />
                         </button>
 
-                        {/* Download */}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            downloadImage(selectedSrc, `result-${selected.id}.png`)
-                          }
+                        {/* Mask + Save (bottom-center) */}
+                        <div
                           className={cn(
-                            "inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5",
-                            "border border-slate-200/70 dark:border-slate-800/70",
-                            "bg-white/90 dark:bg-slate-950/70 backdrop-blur",
-                            "text-[11px] font-semibold text-slate-700 dark:text-slate-200",
-                            "hover:bg-white dark:hover:bg-slate-900"
+                            "absolute left-1/2 bottom-2 z-20 -translate-x-1/2",
+                            "flex items-center gap-1.5",
+                            "opacity-0 group-hover:opacity-100 transition"
                           )}
-                          title="Download image"
                         >
-                          <Download className="h-3.5 w-3.5" />
-                          Save
-                        </button>
-                      </div>
+                          {/* Mask */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMaskPrompt("Hapus objek yang di-mask, isi background tetap natural dan realistis.");
+                              setIsMasking(true);
+                              setSelectedId(selected.id);
+                            }}
+                            className={cn(
+                              "inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5",
+                              "border border-slate-200/70 dark:border-slate-800/70",
+                              "bg-white/90 dark:bg-slate-950/70 backdrop-blur",
+                              "text-[11px] font-semibold text-slate-700 dark:text-slate-200",
+                              "hover:bg-white dark:hover:bg-slate-900"
+                            )}
+                            title="Mask edit"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            Mask
+                          </button>
+
+                          {/* Save */}
+                          <button
+                            type="button"
+                            onClick={() => downloadImage(selectedSrc, `result-${selected.id}.png`)}
+                            className={cn(
+                              "inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5",
+                              "border border-slate-200/70 dark:border-slate-800/70",
+                              "bg-white/90 dark:bg-slate-950/70 backdrop-blur",
+                              "text-[11px] font-semibold text-slate-700 dark:text-slate-200",
+                              "hover:bg-white dark:hover:bg-slate-900"
+                            )}
+                            title="Download image"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                            Save
+                          </button>
+                        </div>
+                      </>
                     ) : null}
+
+
 
                   </div>
                 </div>
