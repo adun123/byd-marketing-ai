@@ -149,14 +149,14 @@ export default function ImageTab({
 
  const navigate = useNavigate();
 
-function handleClearCanvas() {
-  const ok = window.confirm("Hapus semua hasil di canvas?");
-  if (!ok) return;
+// function handleClearCanvas() {
+//   const ok = window.confirm("Hapus semua hasil di canvas?");
+//   if (!ok) return;
 
-  setItems([]);
-  setSelectedItem?.(null);
-  setPreview?.(null);
-}
+//   setItems([]);
+//   setSelectedItem?.(null);
+//   setPreview?.(null);
+// }
 
 function handleResetAll() {
   const ok = window.confirm("Reset semua pengaturan & hasil? (Canvas, prompt, gambar, opsi)");
