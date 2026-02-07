@@ -111,12 +111,16 @@ export async function resolveGroundingSources(rawSources) {
  * Model “grounded” versi serverless.
  * Kalau kamu di backend pakai model khusus (grounding), samain disini.
  */
+
 export function getGroundedModel() {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("Missing GEMINI_API_KEY (set in Vercel env)");
 
   const genAI = new GoogleGenerativeAI(key);
 
-  // Samakan dengan yang kamu pakai di backend kalau beda.
-  return genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  return genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    tools: [{ googleSearch: {} }],
+  });
 }
+

@@ -13,36 +13,33 @@ import imageGenerate from "./_handlers/image/generate.js";
 import imageEdit from "./_handlers/image/edit.js";
 import imageMarketing from "./_handlers/image/marketing.js";
 
-//pembaruan
 export default async function handler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const path = url.pathname; // ex: /api/trends/search
+  const path = url.pathname;
 
-  // preflight CORS (biar POST dari FE aman)
-  if (req.method === "OPTIONS") {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    return res.status(204).end();
-  }
-  if (path === "/api/trends/search") {
-    return res.status(200).json({ hit: "router", method: req.method });
-    }
+  // CORS
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
+  if (req.method === "OPTIONS") return res.status(204).end();
 
   // Router
   if (path === "/api" && req.method === "GET") return apiIndex(req, res);
   if (path === "/api/docs" && req.method === "GET") return docs(req, res);
   if (path === "/api/health" && req.method === "GET") return health(req, res);
   if (path === "/api/health/gemini") return healthGemini(req, res);
-    
-  if (path.startsWith("/api/trends/insights")) return trendsInsights(req, res);
- if (path.startsWith("/api/trends/options")) return trendsOptions(req, res);
-    if (path.startsWith("/api/trends/generate-content")) return trendsGenerateContent(req, res);
 
-    if (path.startsWith("/api/image/generate")) return imageGenerate(req, res);
-    if (path.startsWith("/api/image/edit")) return imageEdit(req, res);
-    if (path.startsWith("/api/image/marketing")) return imageMarketing(req, res);
+  // ✅ FIX: trends/search must be routed
+  if (path === "/api/trends/search") return trendsSearch(req, res);
+
+  if (path.startsWith("/api/trends/insights")) return trendsInsights(req, res);
+  if (path.startsWith("/api/trends/options")) return trendsOptions(req, res);
+  if (path.startsWith("/api/trends/generate-content")) return trendsGenerateContent(req, res);
+
+  if (path.startsWith("/api/image/generate")) return imageGenerate(req, res);
+  if (path.startsWith("/api/image/edit")) return imageEdit(req, res);
+  if (path.startsWith("/api/image/marketing")) return imageMarketing(req, res);
 
   return res.status(404).json({ error: "Endpoint not found", path, method: req.method });
 }
