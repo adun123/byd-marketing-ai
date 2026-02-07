@@ -136,7 +136,7 @@ export default function VisualDescriptionCard({
               "placeholder:text-slate-400 dark:placeholder:text-slate-500",
               "outline-none transition",
               "focus:border-[#068773]/35 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-[#068773]/15",
-              // ✅ scrollable so it won't be too tall
+              // scrollable so it won't be too tall
               "min-h-[220px] max-h-[360px] overflow-y-auto"
             )}
           />
