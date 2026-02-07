@@ -6,9 +6,12 @@ import OutputCanvasCard from "../OutputCanvasCard";
 import type { SourceMode } from "../options/OptionsStep1SourcePlatform";
 
 
+
 type ImgAttachment = { id: string; file: File; previewUrl: string };
 type Props = {
   // state
+  API_BASE: string;
+
   workflow: Workflow;
   setWorkflow: (v: Workflow) => void;
   attachments: ImgAttachment[];
@@ -57,9 +60,44 @@ type Props = {
 
   
 };
+function aspectMeta(a: "1:1" | "4:5" | "9:16" | "16:9") {
+  if (a === "1:1") return "1080 × 1080";
+  if (a === "4:5") return "1080 × 1350";
+  if (a === "9:16") return "1080 × 1920";
+  return "1920 × 1080";
+}
+
+//buat download
+// async function downloadImage(src: string, filename: string) {
+//   // kalau data URL, bisa langsung
+//   if (src.startsWith("data:image/")) {
+//     const a = document.createElement("a");
+//     a.href = src;
+//     a.download = filename;
+//     document.body.appendChild(a);
+//     a.click();
+//     a.remove();
+//     return;
+//   }
+
+//   // kalau URL biasa, fetch blob biar aman
+//   const res = await fetch(src);
+//   const blob = await res.blob();
+//   const url = URL.createObjectURL(blob);
+
+//   const a = document.createElement("a");
+//   a.href = url;
+//   a.download = filename;
+//   document.body.appendChild(a);
+//   a.click();
+//   a.remove();
+
+//   URL.revokeObjectURL(url);
+// }
 
 
 export default function ImageTab({
+  API_BASE,
   workflow,
   setWorkflow,
   visualStyle,
@@ -68,6 +106,7 @@ export default function ImageTab({
   prompt,
   setPrompt,
   sourceMode,
+  setAspect,
   setSourceMode,
   draftScriptPreview,
   draftVisualPrompt,
@@ -75,6 +114,7 @@ export default function ImageTab({
   items,
   setItems,
   onDownload,
+  
   setSelectedItem,
   setPreview,
   attachments,
@@ -106,7 +146,20 @@ function isSideNavReady(params: {
 }
 
 const ready = isSideNavReady({ workflow, visualStyle, aspect, quality, model });
-  
+
+//untuk export
+// function buildExportPayload(latest: GeneratedOutput) {
+//   return {
+//     from: "content",
+//     imagePrompt: latest.prompt,
+//     imageUrl: latest.imageUrl,
+//     base64: latest.base64,
+//     aspectRatio: aspect,
+//     style: visualStyle,
+//   };
+// }
+
+//buat download
 
   return (
     <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
@@ -127,24 +180,26 @@ const ready = isSideNavReady({ workflow, visualStyle, aspect, quality, model });
               <LockedOptionsHint />
             ) : (
               <OptionsPanel
-                workflow={workflow}
-                visualStyle={visualStyle}
-                aspect={aspect}
-                onChange={(v) => {
-                  if (v.workflow) setWorkflow(v.workflow);
-                  if (v.visualStyle) setVisualStyle(v.visualStyle);
-                }}
-                sourceMode={sourceMode}
-                onSourceModeChange={setSourceMode}
-                draftScriptPreview={draftScriptPreview}
-                draftVisualPrompt={draftVisualPrompt}
-                prompt={prompt}
-                onPromptChange={setPrompt}
-                onGenerate={() => onGenerate(prompt)}
-                 isGenerating={isGenerating}
-                attachments={attachments}
-                setAttachments={setAttachments}
-              />
+                  workflow={workflow}
+                  visualStyle={visualStyle}
+                  aspect={aspect}
+                  onChange={(v) => {
+                    if (v.workflow) setWorkflow(v.workflow);
+                    if (v.visualStyle) setVisualStyle(v.visualStyle);
+                    if (v.aspect) setAspect(v.aspect); // ✅ INI KUNCI
+                  }}
+                  sourceMode={sourceMode}
+                  onSourceModeChange={setSourceMode}
+                  draftScriptPreview={draftScriptPreview}
+                  draftVisualPrompt={draftVisualPrompt}
+                  prompt={prompt}
+                  onPromptChange={setPrompt}
+                  onGenerate={(p) => onGenerate(p)}  // ✅ jangan onGenerate(() => onGenerate(prompt))
+                  isGenerating={isGenerating}
+                  attachments={attachments}
+                  setAttachments={setAttachments}
+                />
+
             )}
           </div>
         </div>
@@ -158,17 +213,25 @@ const ready = isSideNavReady({ workflow, visualStyle, aspect, quality, model });
           </div>
         ) : (
           <OutputCanvasCard
+            API_BASE={API_BASE}
             items={items}
-             isGenerating={isGenerating}
+            onAddItems={(newOnes) => setItems((prev) => [...newOnes, ...prev])}
+            aspect={aspect}
+            isGenerating={isGenerating}
             onClear={handleClearCanvas}
             onScaleUp={(it) => console.log("scale up", it)}
-            onEdit={(it) => console.log("edit", it)}
             onSaveDraft={(it) => console.log("save draft", it)}
             onExport={(it) => console.log("export", it)}
-            onDownload={onDownload}
-            metaLeft="1080 x 1080"
+            onDownload={(src, filename) => {
+              // OutputCanvasCard ngasih src string. Kamu sekarang onDownload(item:any).
+              // Biar aman, call sesuai util download yang kamu punya:
+              onDownload({ src, filename });
+            }}
+            metaLeft={aspectMeta(aspect)}
             metaMid="2.4 MB"
           />
+
+
         )}
       </section>
 
