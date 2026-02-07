@@ -283,16 +283,9 @@ export default function TrendsGeneration() {
   const [viral, setViral] = useState<ViralSnippetItem[]>([]);
   const [viralLoading, setViralLoading] = useState(false);
 
-  /** Restore draft context (form + snapshot) from localStorage once. */
-  useEffect(() => {
-    const saved = loadDraftContext();
-    if (!saved) return;
 
-    if (saved.form) setForm(saved.form);
-    if (saved.snapshot) setSnapshot(saved.snapshot);
 
-    // NOTE: state derived (viral/terms) sebaiknya dibangun ulang saat fetch
-  }, []);
+
 
   /** Update message field from snapshot selection. */
   function onUseMessage(msg: string) {
@@ -342,7 +335,8 @@ export default function TrendsGeneration() {
   /** Persist draft context to localStorage when meaningful state changes. */
   useEffect(() => {
     // jangan simpan kosong
-    if (!snapshot && (!viral || viral.length === 0)) return;
+    if (!snapshot && (!searchTrends || !viral || viral.length === 0)) return;
+
 
     const ctx = buildDraftContext();
     saveDraftContext(ctx);
@@ -350,26 +344,27 @@ export default function TrendsGeneration() {
   }, [form, snapshot, viral, selectedTerms]);
 
   /* Fetch insights snapshot + trends search in parallel (settled). */
-async function onFetchSnapshot() {
+async function onFetchSnapshot(formOverride?: typeof form) {
+  const f = formOverride ?? form;
+
   setSnapshotLoading(true);
   setViralLoading(true);
 
   try {
     const q =
-      (form.query && form.query.trim()) ||
-      (form.product && form.product.trim()) ||
-      (form.brand && form.brand.trim()) ||
+      (f.query && f.query.trim()) ||
+      (f.product && f.product.trim()) ||
+      (f.brand && f.brand.trim()) ||
       "trending";
 
-    // Normalize platform for BOTH endpoints
-    const platformNorm = normalizePlatform(form.platform);
+    const platformNorm = normalizePlatform(f.platform);
 
     const insightsReq = fetch(`${API_BASE}/trends/insights`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        ...form,
-        platform: platformNorm ?? form.platform, // penting
+        ...f,
+        platform: platformNorm ?? f.platform,
       }),
     });
 
@@ -378,15 +373,14 @@ async function onFetchSnapshot() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         query: q,
-        platform: platformNorm, // sudah cocok backend
-        topic: form.topic?.trim() || undefined,
-        language: form.language || "id",
+        platform: platformNorm,
+        topic: f.topic?.trim() || undefined,
+        language: f.language || "id",
       }),
     });
 
     const [snapSettled, searchSettled] = await Promise.allSettled([insightsReq, searchReq]);
 
-    // --- INSIGHTS ---
     if (snapSettled.status === "fulfilled") {
       try {
         const snapJson = (await parseJsonSafe(snapSettled.value)) as TrendSnapshot;
@@ -398,12 +392,11 @@ async function onFetchSnapshot() {
       console.error("INSIGHTS fetch failed:", snapSettled.reason);
     }
 
-    // --- SEARCH ---
     if (searchSettled.status === "fulfilled") {
       try {
         const searchJson = (await parseJsonSafe(searchSettled.value)) as SearchTrendsResponse;
         setSearchTrends(searchJson);
-        setViral(mapSearchTrendsToViralItems(searchJson, form.platform));
+        setViral(mapSearchTrendsToViralItems(searchJson, f.platform)); // ✅ pakai f
       } catch (err) {
         console.error("SEARCH parse/error:", err);
       }
@@ -417,6 +410,7 @@ async function onFetchSnapshot() {
     setViralLoading(false);
   }
 }
+
 
 
   /** Navigate to Draft Generator with context payload. */
@@ -446,6 +440,23 @@ useEffect(() => {
 
   return () => clearInterval(interval);
 }, [snapshotLoading]);
+
+  /** Restore draft context (form + snapshot) from localStorage once. */
+useEffect(() => {
+  const saved = loadDraftContext();
+  if (!saved) return;
+
+  if (saved.form) setForm(saved.form);
+  if (saved.snapshot) setSnapshot(saved.snapshot);
+
+  // ✅ rebuild search/viral immediately with restored form
+  if (saved.form) {
+    onFetchSnapshot(saved.form);
+  } else {
+    onFetchSnapshot();
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
 
 return (
   <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950">
