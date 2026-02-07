@@ -44,16 +44,15 @@ export default function Dashboard(){
 
               {/* Headline */}
               <h1 className="mt-5 text-[44px] font-extrabold leading-[0.95] tracking-[-0.04em] text-slate-900 sm:text-[64px]">
-                <span className="block">Scale. Speed.</span>
+                <span className="block">Skala, Eksekusi </span>
                 <span className="mt-2 block font-extrabold italic text-emerald-700">
-                  Precision.
+                    Hasil Lebih Presisi.
                 </span>
               </h1>
 
               {/* Subcopy */}
               <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
-                A central intelligence hub for trend discovery, content generation, and performance
-                monitoring.
+                Satu platform terpadu untuk discovery tren, produksi konten, dan monitoring performa secara end-to-end.
               </p>
 
               
@@ -71,7 +70,7 @@ export default function Dashboard(){
                     "focus:outline-none focus:ring-2 focus:ring-[#068773]/30"
                   )}
                 >
-                  Open Trends Workspace
+                  Buka Workspace Tren
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-white/80 transition group-hover:translate-x-0.5" />
                 </a>
 
@@ -92,7 +91,7 @@ export default function Dashboard(){
                 "focus:outline-none focus:ring-2 focus:ring-[#068773]/30"
               )}
             >
-              Go to Generator
+              Masuk ke Generator
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-current/80 transition group-hover:translate-x-0.5" />
             </a>
 
@@ -102,9 +101,9 @@ export default function Dashboard(){
               {/* Stats */}
               
               <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
-                <StatFeature icon="trend" title="Trendy" subtitle="Discovery what virals" />
-                <StatFeature icon="workflow" title="Workflow" subtitle="Insight to content" />
-                <StatFeature icon="standards" title="Standards" subtitle="Brand aligned DNA" />
+                <StatFeature icon="trend" title="Trendy" subtitle="Pantau topik dan momentum" />
+                <StatFeature icon="workflow" title="Workflow" subtitle="Dari riset hingga produksi" />
+                <StatFeature icon="standards" title="Standards" subtitle="Konsisten dengan guideline" />
               </div>
 
             </div>
@@ -127,7 +126,7 @@ export default function Dashboard(){
                     </div>
 
                     <span className="inline-flex items-center rounded-full border border-emerald-600/15 bg-emerald-600/10 px-2.5 py-0.5 text-[9px] font-bold text-emerald-700">
-                      ACTIVE SNAPSHOT
+                      SNAPSHOT AKTIF
                     </span>
                   </div>
 
@@ -136,11 +135,11 @@ export default function Dashboard(){
                     {/* Trend Hook */}
                     <div className="rounded-2xl border border-slate-200/70 bg-white p-4">
                       <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
-                        ● Trend Hook
+                        ● Hook Trend
                       </div>
 
                       <div className="mt-2 text-sm font-semibold italic text-slate-800">
-                        “Why small brands go viral without spending on ads?”
+                        “Kenapa brand kecil bisa viral tanpa banyak iklan?”
                       </div>
 
                       
@@ -149,12 +148,13 @@ export default function Dashboard(){
                     {/* Visual Strategy */}
                     <div className="rounded-2xl border border-emerald-200/60 bg-emerald-50/50 p-4">
                       <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
-                        👁 Visual Strategy
+                        👁 Strategi Visual
                       </div>
 
                       <p className="mt-2 text-[12px] leading-relaxed text-slate-700">
-                        Split screen: contrast problem vs solution.  
-                        Use high-speed cuts with overlaying kinetic typography.
+                        Gunakan split screen untuk membandingkan masalah vs solusi.  
+                        Pakai cut cepat dan teks bergerak (kinetic typography) agar lebih dinamis.
+                        kinetic typography.
                       </p>
                     </div>
                   </div>
@@ -165,7 +165,7 @@ export default function Dashboard(){
                     type="button"
                     className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#068773] to-[#0fb9a8] px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg"
                   >
-                    Generate AI Draft Now
+                    Generate Draft Marketing
                     <span className="text-lg">→</span>
                   </a>
                 </div>
@@ -187,7 +187,8 @@ export default function Dashboard(){
 
             <div className="hidden sm:flex items-center gap-2">
               <span className="inline-flex items-center rounded-full border border-slate-200/70 bg-white/70 px-3 py-1.5 text-[10px] font-semibold text-slate-700 backdrop-blur">
-                Tip: Start with Discovery → Generation
+                Tips: Disarankan memulai dari Insight → Content Generation
+
               </span>
             </div>
           </div>
