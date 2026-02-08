@@ -85,7 +85,9 @@ useEffect(() => {
   if (!visualPrompt && p) onChangeVisual(p); // ke parent
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [generated]);
-const hasSelectedTerms = (draftCtx?.selectedTerms?.length ?? 0) > 0;
+const hasSelectedTerms = Boolean(generated);
+// const hasSelectedTerms =
+//   (generated?.topic?.trim()?.length ?? 0) > 0;
 
 const hasGenerated = !!generated;
 
@@ -177,7 +179,7 @@ return (
     ) : null}
 
     {/* Empty */}
-    {!generated && !isLoading ? (
+    {(!generated || !draftCtx) && !isLoading ? (
       <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-950 p-4 text-[12px] text-slate-600 dark:text-slate-300">
         Click <b>Generate Draft</b> on the left panel to create hooks, scripts, and visual prompts.
       </div>

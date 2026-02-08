@@ -434,7 +434,7 @@ export default function ScriptEditorCard({
           <div className="mt-2 text-[10px] text-slate-500 dark:text-slate-400">
             {isLoading
               ? "AI is refining your storyline…"
-              : "Tip: select text → gunakan toolbar (bold/italic/list), lalu polish dengan AI."}
+              : "Tip: select text → gunakan toolbar (bold/italic)"}
           </div>
         </div>
 
