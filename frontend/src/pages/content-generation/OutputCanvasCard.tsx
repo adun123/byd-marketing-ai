@@ -43,6 +43,8 @@ type Props = {
   metaMid?: string; // e.g. "2.4 MB"
 
   isGenerating?: boolean;
+  onSelectItem?: (it: GeneratedOutput) => void;
+
 };
 
 function aspectClass(a?: "1:1" | "4:5" | "9:16" | "16:9") {
@@ -78,6 +80,7 @@ export default function OutputCanvasCard({
   onAddItems,
   aspect,
   onClear,
+  onSelectItem,
   // onScaleUp,
   // onExport,
   // onSaveDraft,
@@ -108,8 +111,8 @@ export default function OutputCanvasCard({
   const [editError, setEditError] = React.useState<string | null>(null);
 
   // ini const scale up
-  const [upscaleLoading, setUpscaleLoading] = React.useState(false);
-  const [, setUpscaleError] = React.useState<string | null>(null);
+  // const [ ,setUpscaleLoading] = React.useState(false);
+  // const [, setUpscaleError] = React.useState<string | null>(null);
 
   //untuk maskedit:
   const [isMasking, setIsMasking] = React.useState(false);
@@ -271,74 +274,74 @@ async function handleApplyMaskEdit(
 
 
 
-  //ini bgian scale up
-  async function handleScaleUpClick(target: GeneratedOutput) {
-  if (!target) return;
+//   //ini bgian scale up
+//   async function handleScaleUpClick(target: GeneratedOutput) {
+//   if (!target) return;
 
-  const targetSrc =
-    target.imageUrl ||
-    (target.base64 ? `data:image/png;base64,${target.base64}` : "");
+//   const targetSrc =
+//     target.imageUrl ||
+//     (target.base64 ? `data:image/png;base64,${target.base64}` : "");
 
-  if (!targetSrc) return;
+//   if (!targetSrc) return;
 
-  setUpscaleLoading(true);
-  setUpscaleError(null);
+//   setUpscaleLoading(true);
+//   setUpscaleError(null);
 
-  try {
-    // siapkan file
-    let file: File;
-    if (targetSrc.startsWith("data:image/")) {
-      file = dataUrlToFile(targetSrc, `to-upscale-${target.id}.png`);
-    } else {
-      const resp = await fetch(targetSrc);
-      const blob = await resp.blob();
-      file = new File([blob], `to-upscale-${target.id}.png`, {
-        type: blob.type || "image/png",
-      });
-    }
+//   try {
+//     // siapkan file
+//     let file: File;
+//     if (targetSrc.startsWith("data:image/")) {
+//       file = dataUrlToFile(targetSrc, `to-upscale-${target.id}.png`);
+//     } else {
+//       const resp = await fetch(targetSrc);
+//       const blob = await resp.blob();
+//       file = new File([blob], `to-upscale-${target.id}.png`, {
+//         type: blob.type || "image/png",
+//       });
+//     }
 
-    const fd = new FormData();
-    fd.append("image", file);
-    fd.append("preset", "4k");
-    fd.append("quality", "95");
+//     const fd = new FormData();
+//     fd.append("image", file);
+//     fd.append("preset", "4k");
+//     fd.append("quality", "95");
 
-    const res = await fetch(`${API_BASE}/image/upscale`, {
-      method: "POST",
-      body: fd,
-    });
+//     const res = await fetch(`${API_BASE}/image/upscale`, {
+//       method: "POST",
+//       body: fd,
+//     });
 
-    if (!res.ok) {
-      const t = await res.text().catch(() => "");
-      throw new Error(`HTTP ${res.status} ${t}`.trim());
-    }
+//     if (!res.ok) {
+//       const t = await res.text().catch(() => "");
+//       throw new Error(`HTTP ${res.status} ${t}`.trim());
+//     }
 
-    const data = await res.json();
+//     const data = await res.json();
 
-    if (data?.success && data?.image?.base64) {
-      const b64 = String(data.image.base64).replace(/\s+/g, "");
-      const imageUrl = `data:image/png;base64,${b64}`;
+//     if (data?.success && data?.image?.base64) {
+//       const b64 = String(data.image.base64).replace(/\s+/g, "");
+//       const imageUrl = `data:image/png;base64,${b64}`;
 
-      const mapped: GeneratedOutput[] = [
-        {
-          id: crypto.randomUUID(),
-          prompt: `${target.prompt} (Upscaled ${data?.upscaled?.width}x${data?.upscaled?.height})`,
-          createdAt: Date.now(),
-          imageUrl,
-          base64: b64,
-        },
-      ];
+//       const mapped: GeneratedOutput[] = [
+//         {
+//           id: crypto.randomUUID(),
+//           prompt: `${target.prompt} (Upscaled ${data?.upscaled?.width}x${data?.upscaled?.height})`,
+//           createdAt: Date.now(),
+//           imageUrl,
+//           base64: b64,
+//         },
+//       ];
 
-      onAddItems(mapped); // default: nambah versi baru (non-destruktif)
-      return;
-    }
+//       onAddItems(mapped); // default: nambah versi baru (non-destruktif)
+//       return;
+//     }
 
-    throw new Error(data?.error || "Upscale failed: no image returned");
-  } catch (e: any) {
-    setUpscaleError(e?.message || "Upscale failed");
-  } finally {
-    setUpscaleLoading(false);
-  }
-}
+//     throw new Error(data?.error || "Upscale failed: no image returned");
+//   } catch (e: any) {
+//     setUpscaleError(e?.message || "Upscale failed");
+//   } finally {
+//     setUpscaleLoading(false);
+//   }
+// }
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -737,8 +740,15 @@ const handleDeleteSelected = () => {
                       )}
                     >
                       {items.map((it, idx) => {
-                        const tSrc =
-                          it.imageUrl || (it.base64 ? `data:image/png;base64,${it.base64}` : undefined);
+                        function base64ToDataUrl(b64: string) {
+                          const s = b64.trim();
+                          const isJpeg = s.startsWith("/9j/");
+                          const mime = isJpeg ? "image/jpeg" : "image/png";
+                          return `data:${mime};base64,${s}`;
+                        }
+
+                        const tSrc = it.imageUrl || (it.base64 ? base64ToDataUrl(it.base64) : undefined);
+
 
                         const active = it.id === selected?.id;
 
@@ -746,7 +756,11 @@ const handleDeleteSelected = () => {
                           <button
                             key={it.id}
                             type="button"
-                            onClick={() => setSelectedId(it.id)}
+                            onClick={() => {
+                              setSelectedId(it.id);
+                              onSelectItem?.(it); // ✅ baru
+                            }}
+
                             className={cn(
                               "relative shrink-0 overflow-hidden rounded-xl border",
                               "h-16 w-16 md:h-[72px] md:w-[72px]", // ✅ lebih kecil
@@ -789,7 +803,7 @@ const handleDeleteSelected = () => {
 
                 {/* actions */}
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                  <button
+                  {/* <button
                     type="button"
                     onClick={() => selected && handleScaleUpClick(selected)}
                     disabled={!selected || !selectedSrc || upscaleLoading}
@@ -803,7 +817,7 @@ const handleDeleteSelected = () => {
                   >
                     <Sparkles className="h-4 w-4" />
                     {upscaleLoading ? "Upscaling..." : "Scale Up"}
-                  </button>
+                  </button> */}
 
 
                   <button

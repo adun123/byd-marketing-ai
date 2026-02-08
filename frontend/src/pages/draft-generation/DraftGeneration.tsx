@@ -259,7 +259,12 @@ function handleResetDraft() {
   };
 }
 
-
+function normalizeTermKey(terms: string[]) {
+  return terms
+    .map((t) => String(t || "").replace(/\s+/g, "").trim().toLowerCase())
+    .filter(Boolean)
+    .join("_");
+}
 
 
 
@@ -308,20 +313,19 @@ useEffect(() => {
 }, []);
 
 useEffect(() => {
-  // kalau draftConfig sudah ada, jangan override
-  const raw = localStorage.getItem(LS_KEYS.draftConfig);
-  if (raw) return;
-
+  // kalau ga ada ctx terms, skip
   const ctxTerms = (ctx?.selectedTerms ?? []).filter(Boolean);
   if (!ctxTerms.length) return;
 
+  // bikin cfg dari ctx (humanize kalau kamu memang simpan display dengan spasi)
+  // kalau di Draft kamu simpan terms display (spasi), samakan di sini juga.
   const humanize = (term: string) =>
     term
       .replace(/([a-z])([A-Z])/g, "$1 $2")
       .replace(/([a-zA-Z])([0-9])/g, "$1 $2")
       .replace(/^./, (s) => s.toUpperCase());
 
-  const seeded: DraftConfig = {
+  const nextCfg: DraftConfig = {
     sourceMode: "trend",
     terms: ctxTerms.slice(0, 12).map(humanize),
     topicManual: "",
@@ -332,10 +336,28 @@ useEffect(() => {
     language: (ctx?.form?.language as "id" | "en") || "id",
   };
 
-  setDraftConfig(seeded);
-  localStorage.setItem(LS_KEYS.draftConfig, JSON.stringify(seeded));
-}, [ctx]);
+  const savedRaw = localStorage.getItem(LS_KEYS.draftConfig);
+  const savedCfg = savedRaw ? safeJsonParse<DraftConfig>(savedRaw) : null;
 
+  const nextKey = normalizeTermKey(nextCfg.terms);
+  const savedKey = savedCfg ? normalizeTermKey(savedCfg.terms) : "";
+
+  // kalau belum ada savedCfg, atau ctx berbeda dari saved, pakai ctx sebagai sumber baru
+  if (!savedCfg || nextKey !== savedKey) {
+    setDraftConfig(nextCfg);
+    localStorage.setItem(LS_KEYS.draftConfig, JSON.stringify(nextCfg));
+
+    // karena topik berubah, bersihin hasil draft lama
+    setGenerated(null);
+    setDraftResult({ scriptHtml: "", visualPrompt: "" });
+    localStorage.removeItem(LS_KEYS.generated);
+    localStorage.removeItem(LS_KEYS.draftResult);
+    localStorage.removeItem(LS_KEYS.genKeyTopic);
+
+    // reset OptionDraftFilter biar UI kiri langsung update
+    setResetNonce((n) => n + 1);
+  }
+}, [ctx]);
 
 
 

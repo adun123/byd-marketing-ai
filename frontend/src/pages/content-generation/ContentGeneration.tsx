@@ -36,22 +36,18 @@ function safeParse<T>(raw: string | null): T | null {
   }
 }
 
-function persistableItems(items: GeneratedOutput[]) {
+function persistableItems<T extends { id: string; prompt?: string; createdAt?: number; imageUrl?: string; base64?: string }>(
+  items: T[]
+) {
   return items.map((it) => ({
     id: it.id,
-    prompt: it.prompt,
-    createdAt: it.createdAt,
-
-    // ✅ simpan base64 kalau ada (paling aman)
+    prompt: it.prompt ?? "",
+    createdAt: it.createdAt ?? Date.now(),
     base64: it.base64,
-
-    // ✅ simpan imageUrl HANYA kalau absolut
-    imageUrl:
-      it.imageUrl && it.imageUrl.startsWith("http")
-        ? it.imageUrl
-        : undefined,
+    imageUrl: it.imageUrl || undefined, // ✅ simpan data: juga
   }));
 }
+
 
 
 
@@ -79,6 +75,10 @@ export default function ContentGeneration() {
   // sidebar preference
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  const itemsRef = React.useRef(items);
+  React.useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   const location = useLocation();
   const [platform, setPlatform] = useState<"instagram" | "tiktok" | "linkedin">("instagram");
@@ -145,54 +145,61 @@ async function handleGenerate({ prompt }: { prompt: string }) {
   }
 
   setIsGenerating(true);
-  try {
-    let newItems: GeneratedOutput[] = [];
+    try {
+      let newItems: GeneratedOutput[] = [];
 
-    if (workflow === "upscale") {
-      const first = attachments[0];
-      const file: File = first.file;
+      if (workflow === "upscale") {
+        const first = attachments[0];
+        const file: File = first.file;
 
-      newItems = await upscaleImageService({
-        API_BASE,
-        file,
-        preset: "4k",
-        quality: 95,
-      });
-    } else {
-      const isCarousel =
-        tab === "image" && imageCategory === "carousel" && workflow === "text_to_image";
+        newItems = await upscaleImageService({
+          API_BASE,
+          file,
+          preset: "4k",
+          quality: 95,
+        });
+      } else {
+        const isCarousel =
+          tab === "image" && imageCategory === "carousel" && workflow === "text_to_image";
 
-      newItems = await generateImageService({
-        API_BASE,
-        workflow,
-        prompt: cleanPrompt,
-        attachments,
-        visualStyle,
-        aspect,
-        numberOfResults: isCarousel ? slides : 1, // ✅ kunci carousel
-      });
+        newItems = await generateImageService({
+          API_BASE,
+          workflow,
+          prompt: cleanPrompt,
+          attachments,
+          visualStyle,
+          aspect,
+          numberOfResults: isCarousel ? slides : 1,
+        });
+      }
 
-      console.log("GEN RESULT COUNT:", newItems.length);
-      console.log("TOTAL ITEMS BEFORE:", items.length);
+      // ✅ TAGGING DI SINI
+      const sourceTag: "manual" | "draft" = sourceMode === "draft" ? "draft" : "manual";
+      const tagged: GeneratedOutput[] = newItems.map((it) => ({
+        ...it,
+        promptSource: sourceTag,
+        manualPrompt: sourceTag === "manual" ? cleanPrompt : undefined,
+        draftPrompt: sourceTag === "draft" ? cleanPrompt : undefined,
+      }));
+
+      // ✅ PAKE tagged, BUKAN newItems
+      setItems((prev) => [...tagged, ...prev]);
+
+    } catch (error) {
+      const errorItem: GeneratedOutput = {
+        id: crypto.randomUUID(),
+        prompt: `${prompt || "(no prompt)"} (Error: ${
+          error instanceof Error ? error.message : "Unknown error"
+        })`,
+        createdAt: Date.now(),
+        // optional: biar error juga “ingat” mode
+        promptSource: sourceMode === "draft" ? "draft" : "manual",
+      };
+
+      setItems((prev) => [errorItem, ...prev]);
+    } finally {
+      setIsGenerating(false);
     }
-
-    setItems((prev) => {
-      const next = [...newItems, ...prev];
-      console.log("TOTAL ITEMS AFTER:", next.length);
-      return next;
-    });
-  } catch (error) {
-    const errorItem: GeneratedOutput = {
-      id: crypto.randomUUID(),
-      prompt: `${prompt || "(no prompt)"} (Error: ${
-        error instanceof Error ? error.message : "Unknown error"
-      })`,
-      createdAt: Date.now(),
-    };
-    setItems((prev) => [errorItem, ...prev]);
-  } finally {
-    setIsGenerating(false);
-  }
 }
 
 

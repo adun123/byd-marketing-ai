@@ -42,14 +42,21 @@ function aspectClass(aspect: "1:1" | "4:5" | "16:9" | "9:16") {
 
 function resolveSrc(it?: OutputItem | null) {
   if (!it) return undefined;
+
   if (it.imageUrl && it.imageUrl.trim()) return it.imageUrl;
-  if (it.base64 && it.base64.trim()) {
-    return it.base64.startsWith("data:")
-      ? it.base64
-      : `data:image/png;base64,${it.base64}`;
+
+  const b64 = (it.base64 || "").trim();
+  if (b64) {
+    if (b64.startsWith("data:")) return b64;
+
+    const isJpeg = b64.startsWith("/9j/");
+    const mime = isJpeg ? "image/jpeg" : "image/png";
+    return `data:${mime};base64,${b64}`;
   }
+
   return undefined;
 }
+
 
 type Props = {
   title?: string;

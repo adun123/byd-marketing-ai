@@ -7,6 +7,7 @@ import type { SourceMode } from "../options/OptionsStep1SourcePlatform";
 import { ArrowRight,  } from "lucide-react";
 import { cn } from "../../../lib/cn";
 import { useNavigate } from "react-router-dom";
+import React from "react";
 
 
 function persistableItems<T extends { id: string; prompt?: string; createdAt?: number; imageUrl?: string; base64?: string }>(
@@ -17,9 +18,11 @@ function persistableItems<T extends { id: string; prompt?: string; createdAt?: n
     prompt: it.prompt ?? "",
     createdAt: it.createdAt ?? Date.now(),
     base64: it.base64,
-    imageUrl: it.imageUrl && it.imageUrl.startsWith("http") ? it.imageUrl : undefined,
+    // ✅ simpan apa adanya kalau ada string
+    imageUrl: it.imageUrl || undefined,
   }));
 }
+
 
 type ImgAttachment = { id: string; file: File; previewUrl: string };
 type Platform = "instagram" | "tiktok"  | "linkedin";
@@ -157,6 +160,10 @@ export default function ImageTab({
 //   setSelectedItem?.(null);
 //   setPreview?.(null);
 // }
+const itemsRef = React.useRef(items);
+  React.useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
 function handleResetAll() {
   const ok = window.confirm("Reset semua pengaturan & hasil? (Canvas, prompt, gambar, opsi)");
@@ -274,6 +281,20 @@ const canPreview = ready && items.length > 0 && !isGenerating;
                onDeleteItem={(id) => {
                 setItems((prev) => prev.filter((x) => x.id !== id));
               }}
+               onSelectItem={(it) => {
+                  const src = it.promptSource ?? "manual";
+
+                  // 1) pindah tab mode di option step 1
+                  setSourceMode(src);
+
+                  // 2) isi prompt sesuai sumber
+                  // versi simple (paling cepat):
+                  setPrompt(it.prompt || "");
+
+                  // versi lebih presisi (kalau kamu simpan manualPrompt/draftPrompt):
+                  // if (src === "manual") setPrompt(it.manualPrompt ?? it.prompt ?? "");
+                  // else setPrompt(it.draftPrompt ?? it.prompt ?? "");
+                }}
             />
 
             {/* CTA -> Preview Generator */}
@@ -313,18 +334,19 @@ const canPreview = ready && items.length > 0 && !isGenerating;
                 <button
                   type="button"
                   disabled={!canPreview}
-                onClick={() => {
-                  try {
-                    localStorage.setItem(
-                      "cg.canvas.items.v1",
-                      JSON.stringify(persistableItems(items))
-                    );
-                  } catch (e) {
-                    console.error("Persist before preview failed", e);
-                  }
+                  onClick={() => {
+                    try {
+                      localStorage.setItem(
+                        "cg.canvas.items.v1",
+                        JSON.stringify(persistableItems(itemsRef.current))
+                      );
+                    } catch (e) {
+                      console.error("Persist before preview failed", e);
+                    }
 
-                  navigate("/preview-generator");
-                }}
+                    navigate("/preview-generator", { state: { refresh: Date.now() }});
+                  }}
+
 
                   className={cn(
                     "inline-flex shrink-0 items-center gap-1.5",

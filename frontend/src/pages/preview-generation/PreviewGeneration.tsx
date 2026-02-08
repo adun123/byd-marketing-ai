@@ -1,7 +1,7 @@
 import * as React from "react";
+import { useLocation } from "react-router-dom"; // ✅ tambah
 
 import PreviewFooter from "./PreviewFooter";
-
 import PreviewMetaPanel from "./PreviewMetaPanel";
 import PreviewCanvasPanel from "./PreviewCanvasPanel";
 import PreviewValidationPanel from "./PreviewValidationPanel";
@@ -10,8 +10,7 @@ import { loadContentCtx } from "../content-generation/utils/contentContextStorag
 import { loadContentPreviewMeta } from "../content-generation/utils/contentPreviewMetaStorage";
 import TopBarPreview from "./TopBarPreview";
 
-// ⚠️ samakan dengan LS_KEY_ITEMS yang kamu pakai di ContentGeneration.tsx
-const LS_KEY_ITEMS = "cg.canvas.items.v1"; // <- kalau beda, ganti sesuai konstanta kamu
+const LS_KEY_ITEMS = "cg.canvas.items.v1";
 
 function safeParse<T>(raw: string | null): T | null {
   if (!raw) return null;
@@ -33,63 +32,63 @@ function normalizeItems(rawItems: any[]): OutputItem[] {
 }
 
 export default function PreviewGeneration() {
-  // 1) DRAFT DATA (topic, audience, caption) dari Draft Generation via saveContentCtx
-  const draft = loadContentCtx();
+  const location = useLocation(); // ✅ baru
 
+  // 1) DRAFT DATA
+  const draft = loadContentCtx();
   const topic = draft?.topic ?? "—";
   const targetAudience = draft?.targetAudience ?? "—";
   const caption = (draft?.scriptPreview ?? "").trim();
 
-  // 2) CONTENT META dari Content Generation (aspect/format/slides/platform)
+  // 2) CONTENT META
   const cgMeta = loadContentPreviewMeta();
   const aspect = cgMeta?.aspect ?? "4:5";
+  const platformLabel = cgMeta?.platform ? `${cgMeta.platform} (${aspect})` : `Content Generator (${aspect})`;
+  const formatLabel = cgMeta?.format === "carousel" ? `Carousel - ${cgMeta.slides ?? 1} Slides` : "Infographic";
 
-  const platformLabel = cgMeta?.platform
-    ? `${cgMeta.platform} (${aspect})`
-    : `Content Generator (${aspect})`;
+  // 3) ITEMS
+  function loadItemsFromLS(): OutputItem[] {
+    const saved = safeParse<any>(localStorage.getItem(LS_KEY_ITEMS));
 
-  const formatLabel =
-    cgMeta?.format === "carousel"
-      ? `Carousel - ${cgMeta.slides ?? 1} Slides`
-      : "Infographic";
+    const arr =
+      Array.isArray(saved) ? saved :
+      Array.isArray(saved?.items) ? saved.items :
+      Array.isArray(saved?.images) ? saved.images :
+      [];
 
-  // 3) ITEMS (preview image outputs) dari localStorage ContentGeneration
-  
-    function loadItemsFromLS(): OutputItem[] {
-      const saved = safeParse<any>(localStorage.getItem(LS_KEY_ITEMS));
+    return normalizeItems(arr).filter((x) => x.imageUrl || x.base64);
+  }
 
-      const arr =
-        Array.isArray(saved) ? saved :
-        Array.isArray(saved?.items) ? saved.items :
-        Array.isArray(saved?.images) ? saved.images : // ✅ penting (backend kamu pakai "images")
-        [];
+  const [items, setItems] = React.useState<OutputItem[]>(() => loadItemsFromLS());
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [isPublishOpen, setIsPublishOpen] = React.useState(false);
 
-      return normalizeItems(arr).filter((x) => x.imageUrl || x.base64);
-    }
-
-    const [items, setItems] = React.useState<OutputItem[]>(() => loadItemsFromLS());
-
-    // optional: refresh saat halaman kebuka
-    React.useEffect(() => {
-      setItems(loadItemsFromLS());
-    }, []);
-
-
-
-  // optional: kalau user generate lagi di tab lain lalu balik ke preview
+  // ✅ Reload setiap kali route ini "dikunjungi lagi"
   React.useEffect(() => {
-    const saved = safeParse<OutputItem[]>(localStorage.getItem(LS_KEY_ITEMS));
-    if (Array.isArray(saved)) setItems(saved);
+    const next = loadItemsFromLS();
+    setItems(next);
+
+    // reset selected kalau item berubah banyak / item sebelumnya hilang
+    setSelectedId((prev) => (prev && next.some((x) => x.id === prev) ? prev : next[0]?.id ?? null));
+  }, [location.key, (location.state as any)?.refresh]); // ✅ kunci
+
+  // ✅ optional: kalau LS berubah dari tab lain, auto update
+  React.useEffect(() => {
+    function onStorage(e: StorageEvent) {
+      if (e.key !== LS_KEY_ITEMS) return;
+      const next = loadItemsFromLS();
+      setItems(next);
+      setSelectedId((prev) => (prev && next.some((x) => x.id === prev) ? prev : next[0]?.id ?? null));
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const [selectedId, setSelectedId] = React.useState<string | null>(null);
-
+  // ✅ fallback: kalau belum ada selectedId, set pertama
   React.useEffect(() => {
     if (!selectedId && items.length) setSelectedId(items[0].id);
   }, [items, selectedId]);
-
-  const [isPublishOpen, setIsPublishOpen] = React.useState(false);
-
+  
   return (
     <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950 pb-[96px]">
       <TopBarPreview />

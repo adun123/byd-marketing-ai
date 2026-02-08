@@ -2,7 +2,7 @@
 export type GenMode = "image" | "video";
 export type SceneKey = "ai_image" | "img_to_img" | "upscale";
 export type ChannelKey = "shopee" | "facebook" | "instagram" | "ads" | "lazada";
-
+export type PromptSource = "manual" | "draft"; 
 export type SceneItem = {
   key: SceneKey;
   title: string;
@@ -28,6 +28,11 @@ export type GeneratedOutput = {
   imageUrl?: string;
   base64?: string;
   kind?: GeneratedOutputKind;
+
+   // ✅ baru
+  promptSource?: PromptSource;
+  manualPrompt?: string; // optional: kalau mau simpan manual terpisah
+  draftPrompt?: string;  // optional: kalau mau simpan draft terpisah
 };
 
 export type VideoAttachment = {
