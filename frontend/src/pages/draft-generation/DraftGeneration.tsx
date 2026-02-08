@@ -212,24 +212,13 @@ export default function DraftGeneration() {
   }, [draftResult]);
 
   /** Load cached generated output dari localStorage sekali saat mount. */
-useEffect(() => {
-  if (!draftConfig) return;
+  useEffect(() => {
+    const rawGen = localStorage.getItem(LS_KEYS.generated);
+    if (!rawGen) return;
 
-  const isTopicEmpty =
-    draftConfig.sourceMode === "trend"
-      ? draftConfig.terms.length === 0
-      : draftConfig.topicManual.trim() === "";
-
-  if (isTopicEmpty) {
-    handleResetDraft();
-  }
-}, [
-  draftConfig?.sourceMode,
-  draftConfig?.terms,
-  draftConfig?.topicManual,
-]);
-
-
+    const parsed = safeJsonParse<GenerateContentResponse>(rawGen);
+    if (parsed) setGenerated(parsed);
+  }, []);
 
   /** Persist generated ke localStorage setelah generate selesai (hindari save saat loading). */
   useEffect(() => {
@@ -237,25 +226,6 @@ useEffect(() => {
     if (genLoading) return;
     localStorage.setItem(LS_KEYS.generated, JSON.stringify(generated));
   }, [generated, genLoading]);
-
-
-  useEffect(() => {
-  if (!draftConfig) return;
-
-  const isTopicEmpty =
-    draftConfig.sourceMode === "trend"
-      ? draftConfig.terms.length === 0
-      : draftConfig.topicManual.trim() === "";
-
-  if (isTopicEmpty) {
-    handleResetDraft();
-  }
-}, [
-  draftConfig?.sourceMode,
-  draftConfig?.terms,
-  draftConfig?.topicManual,
-]);
-
 
 
 

@@ -88,6 +88,7 @@ export default function ContentGeneration() {
 const [sourceMode, setSourceMode] = useState<SourceMode>("manual");
 const [draftScriptPreview, setDraftScriptPreview] = useState("");
 const [draftVisualPrompt, setDraftVisualPrompt] = useState("");
+const prevSourceMode = React.useRef<SourceMode>(sourceMode);
 
 useEffect(() => {
   const st = location.state as any;
@@ -102,6 +103,20 @@ useEffect(() => {
 
   }
 }, [location.state]);
+
+useEffect(() => {
+  // hanya clear kalau:
+  // dari draft → manual
+  if (prevSourceMode.current === "draft" && sourceMode === "manual") {
+    setDraftScriptPreview("");
+    setDraftVisualPrompt("");
+    setPrompt(""); // manual fresh
+  }
+
+  prevSourceMode.current = sourceMode;
+}, [sourceMode]);
+
+
 
   useEffect(() => {
     const saved = localStorage.getItem("cg.sidebarOpen");

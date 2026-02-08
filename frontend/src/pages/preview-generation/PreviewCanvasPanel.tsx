@@ -281,7 +281,14 @@ const [expanded, setExpanded] = React.useState(false);
         </div>
 
         {/* body */}
-        <div className={cn("px-5 py-4", expanded ? "" : "max-h-[360px] overflow-auto")}>
+        <div
+            className={cn(
+              "px-5 py-4",
+              "text-slate-700 dark:text-slate-200", // ⬅️ FORCE BASE COLOR
+              expanded ? "" : "max-h-[360px] overflow-auto"
+            )}
+          >
+
           {!caption ? (
             <div className="text-[13px] text-slate-500 dark:text-slate-400">—</div>
           ) : showRaw ? (
@@ -292,19 +299,28 @@ const [expanded, setExpanded] = React.useState(false);
           ) : isProbablyHtml(caption) ? (
             <div
               className={cn(
-                "prose prose-slate dark:prose-invert max-w-none",
+                "prose max-w-none",
+                "prose-slate dark:prose-invert",
+
+                // ukuran & spacing
                 "text-[11.5px] leading-[1.55]",
                 "prose-p:my-1.5 prose-p:leading-[1.55]",
-                "prose-strong:font-semibold",
-                "prose-strong:text-[#068773] dark:prose-strong:text-[#34d399]",
-                "prose-em:text-slate-600 dark:prose-em:text-slate-300",
-                "prose-br:my-0",
                 "prose-ul:my-1.5 prose-ol:my-1.5",
-                "prose-li:my-0.5"
-              )}
+                "prose-li:my-0.5",
 
+                // 🔥 FORCE TEXT COLOR (INI KUNCI)
+                "prose-p:text-slate-700 dark:prose-p:text-slate-200",
+                "prose-li:text-slate-700 dark:prose-li:text-slate-200",
+                "prose-span:text-slate-700 dark:prose-span:text-slate-200",
+
+                // emphasis
+                "prose-strong:font-semibold",
+                "prose-strong:text-[#068773] dark:prose-strong:text-emerald-400",
+                "prose-em:text-slate-600 dark:prose-em:text-slate-300"
+              )}
               dangerouslySetInnerHTML={{ __html: sanitizeBasicHtml(caption) }}
             />
+
           ) : (
             <div className="whitespace-pre-wrap text-[13px] leading-relaxed text-slate-700 dark:text-slate-200">
               {caption}
