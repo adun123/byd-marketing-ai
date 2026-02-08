@@ -443,20 +443,20 @@ async function handleSubmitEdit(target: GeneratedOutput) {
 
 
     //ini buat save
-  function saveDraftLocal(item: { prompt?: string; imageUrl?: string; base64?: string }) {
+  // function saveDraftLocal(item: { prompt?: string; imageUrl?: string; base64?: string }) {
 
-      const key = "cg.savedDrafts";
-      const raw = localStorage.getItem(key);
-      const list = raw ? JSON.parse(raw) : [];
-      const draft = {
-        id: crypto.randomUUID(),
-        createdAt: Date.now(),
-        prompt: item.prompt,
-        imageUrl: item.imageUrl,
-        base64: item.base64,
-      };
-      localStorage.setItem(key, JSON.stringify([draft, ...list].slice(0, 50)));
-    }
+  //     const key = "cg.savedDrafts";
+  //     const raw = localStorage.getItem(key);
+  //     const list = raw ? JSON.parse(raw) : [];
+  //     const draft = {
+  //       id: crypto.randomUUID(),
+  //       createdAt: Date.now(),
+  //       prompt: item.prompt,
+  //       imageUrl: item.imageUrl,
+  //       base64: item.base64,
+  //     };
+  //     localStorage.setItem(key, JSON.stringify([draft, ...list].slice(0, 50)));
+  //   }
 
     // buat hapus:
     async function downloadImage(src: string, filename: string) {
@@ -942,7 +942,7 @@ const handleDeleteSelected = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button
+            {/* <button
               type="button"
               disabled={!selected}
               onClick={() => {
@@ -958,7 +958,7 @@ const handleDeleteSelected = () => {
               )}
             >
               Save Draft
-            </button>
+            </button> */}
 
             <button
               type="button"
