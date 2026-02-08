@@ -228,7 +228,7 @@ const canPreview = ready && items.length > 0 && !isGenerating;
                   onChange={(v) => {
                     if (v.workflow) setWorkflow(v.workflow);
                     if (v.visualStyle) setVisualStyle(v.visualStyle);
-                    if (v.aspect) setAspect(v.aspect); // ✅ INI KUNCI
+                    if (v.aspect) setAspect(v.aspect); //  INI KUNCI
                   }}
                   sourceMode={sourceMode}
                   onSourceModeChange={setSourceMode}
@@ -236,12 +236,12 @@ const canPreview = ready && items.length > 0 && !isGenerating;
                   draftVisualPrompt={draftVisualPrompt}
                   prompt={prompt}
                   onPromptChange={setPrompt}
-                  onGenerate={(p) => onGenerate(p)}  // ✅ jangan onGenerate(() => onGenerate(prompt))
+                  onGenerate={(p) => onGenerate(p)}  //  jangan onGenerate(() => onGenerate(prompt))
                   isGenerating={isGenerating}
                   attachments={attachments}
                   setAttachments={setAttachments}
                   
-                  platform={platform}              // ✅ add
+                  platform={platform}              //  add
                   onPlatformChange={setPlatform}
                 />
 

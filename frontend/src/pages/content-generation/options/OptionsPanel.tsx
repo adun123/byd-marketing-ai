@@ -165,15 +165,22 @@ export default function OptionsPanel({
         }}
         sourceMode={sourceMode}
         onSourceModeChange={(m) => {
-          // draft mode cuma buat text_to_image
           if (m === "draft" && workflow !== "text_to_image") return;
 
           onSourceModeChange(m);
 
-          if (m === "draft" && workflow === "text_to_image" && draftVisualPrompt) {
-            onPromptChange(draftVisualPrompt);
+          if (m === "draft" && workflow === "text_to_image") {
+            // draft → sync dari draftVisualPrompt
+            onPromptChange(draftVisualPrompt || "");
+          }
+
+          if (m === "manual") {
+            // 🔒 manual → JANGAN pakai draftVisualPrompt
+            // opsional: reset atau biarkan user ngetik ulang
+            onPromptChange("");
           }
         }}
+
 
         scriptPreview={sourceMode === "draft" ? previewText : "Manual mode."}
         platform={platform}
@@ -196,7 +203,7 @@ export default function OptionsPanel({
         <OptionsStep3PromptInput
           prompt={prompt}
           onChange={onPromptChange}
-          // ✅ pastikan Step3 generate pakai handler yang sama
+          //  pastikan Step3 generate pakai handler yang sama
           onGenerate={() => handleGenerateClick()}
           isGenerating={isGenerating}
           disabledGenerate={disabledGenerate}
