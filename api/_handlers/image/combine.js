@@ -22,7 +22,7 @@ const uploadMultiple = multer({
   storage,
   fileFilter,
   limits: { fileSize: 10 * 1024 * 1024 },
-}).array("images", 5);
+}).array("images", 3);
 
 function runMiddleware(req, res, fn) {
   return new Promise((resolve, reject) => {
@@ -46,10 +46,19 @@ export default async function combine(req, res) {
     if (!req.files || req.files.length < 2) {
       return res.status(400).json({ error: "At least 2 images are required" });
     }
+    
+    if (req.files.length > 3) {
+      cleanupFiles(req.files);
+      return res.status(400).json({ error: "Maximum 3 images are allowed for combine" });
+    }
+
+
+
     if (!prompt || String(prompt).trim().length < 2) {
       cleanupFiles(req.files);
       return res.status(400).json({ error: "Prompt is required" });
     }
+
 
     const imageParts = req.files
       .map((file, index) => [`Image ${index + 1}:`, prepareImagePart(file.path)])

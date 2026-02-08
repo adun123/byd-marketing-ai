@@ -51,7 +51,14 @@ export async function generateImageService({
       // ✅ jangan append prompt dua kali (yang terakhir bisa override)
       fd.append("prompt", `${combineGuard} ${base}`);
 
-      attachments.slice(0, 5).forEach((a) => fd.append("images", a.file));
+      const MAX_COMBINE = 3;
+
+      // guard biar user tau, bukan diam-diam kepotong (opsional, tapi enak)
+      if (attachments.length > MAX_COMBINE) {
+        throw new Error(`Combine supports up to ${MAX_COMBINE} images (Vercel limit).`);
+      }
+
+      attachments.slice(0, MAX_COMBINE).forEach((a) => fd.append("images", a.file));
 
       response = await fetch(`${API_BASE}/image/combine`, {
         method: "POST",

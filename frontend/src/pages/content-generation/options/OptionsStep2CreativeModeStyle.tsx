@@ -68,12 +68,13 @@ export default function OptionsStep2CreativeModeStyle({
   const needsImage = workflow === "image_to_image" || workflow === "upscale";
   const hasImage = attachments.length > 0;
   const minImages = workflow === "image_to_image" ? 2 : workflow === "upscale" ? 1 : 0;
+  const maxImages = workflow === "image_to_image" ? 3 : workflow === "upscale" ? 1 : 0 ;
   const hasMinImages = attachments.length >= minImages;
 
-  const uploadMax = workflow === "image_to_image" ? 5 : 1;
+  const uploadMax = workflow === "image_to_image" ? 3 : 1;
   const uploadLabel =
     workflow === "image_to_image" ? `Upload up to ${uploadMax} images` : "Upload 1 image";
-
+const overMaxImages = attachments.length > maxImages;
   return (
     <aside className="w-full overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 shadow-sm">
       <div className="p-4">
@@ -205,7 +206,7 @@ export default function OptionsStep2CreativeModeStyle({
                     {uploadLabel}
                   </div>
                   <div className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400">
-                    JPG/PNG • {workflow === "image_to_image" ? "max 5" : "single"}
+                   JPG/PNG • {workflow === "image_to_image" ? "2–3 images • ≤4MB each" : "single"}
                   </div>
                 </div>
               </label>
@@ -213,7 +214,7 @@ export default function OptionsStep2CreativeModeStyle({
               {/* Thumbs */}
               {attachments.length ? (
                 <div className="mt-3 grid grid-cols-3 gap-2">
-                  {attachments.slice(0, 6).map((a) => (
+                  {attachments.slice(0, workflow === "image_to_image" ? 3 : 1).map((a) => (
                     <div
                       key={a.id}
                       className="group relative overflow-hidden rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-white dark:bg-slate-950"
@@ -243,13 +244,16 @@ export default function OptionsStep2CreativeModeStyle({
               ) : null}
 
               {/* Warning */}
-              {!hasMinImages ? (
+              {!hasMinImages || overMaxImages ? (
                 <div className="mt-3 rounded-2xl border border-amber-200/70 dark:border-amber-400/20 bg-amber-50 dark:bg-amber-400/10 px-3 py-2 text-[10px] font-semibold text-amber-800 dark:text-amber-200">
                   {workflow === "image_to_image"
-                    ? "Add at least 2 images to generate."
+                    ? !hasMinImages
+                      ? "Add at least 2 images to generate."
+                      : "Maximum 3 images (Vercel payload limit). Remove extra images."
                     : "Add at least 1 image to continue."}
                 </div>
               ) : null}
+
 
             </div>
           </div>
