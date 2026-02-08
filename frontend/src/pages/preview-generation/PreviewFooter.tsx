@@ -1,6 +1,6 @@
 // src/pages/preview-generation/PreviewFooter.tsx
 
-import { FileDown, Rocket } from "lucide-react";
+import {  Rocket } from "lucide-react";
 
 function cn(...s: Array<string | undefined | false | null>) {
   return s.filter(Boolean).join(" ");
@@ -38,10 +38,10 @@ function formatTime(val: Props["generatedAt"]) {
 export default function PreviewFooter({
   generatedAt,
   publishDisabled = false,
-  draftDisabled = false,
-  onSaveDraft,
+  // draftDisabled = false,
+  // onSaveDraft,
   onPublish,
-  draftLabel = "Save to Draft",
+  // draftLabel = "Save to Draft",
   publishLabel = "Publish / Export",
   infoText,
 }: Props) {
@@ -63,7 +63,7 @@ export default function PreviewFooter({
       <div className="mx-auto w-full max-w-7xl px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           {/* Left: Save to Draft */}
-          <button
+          {/* <button
             type="button"
             onClick={onSaveDraft}
             disabled={draftDisabled}
@@ -84,7 +84,7 @@ export default function PreviewFooter({
             </span>
             <span className="hidden sm:inline">{draftLabel}</span>
             <span className="sm:hidden">Draft</span>
-          </button>
+          </button> */}
 
           {/* Middle info */}
           <div className="hidden sm:flex min-w-0 items-center justify-center">

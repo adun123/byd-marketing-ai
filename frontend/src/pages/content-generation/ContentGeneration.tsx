@@ -143,6 +143,7 @@ async function handleGenerate({ prompt }: { prompt: string }) {
   if (workflow === "upscale") {
     if (!hasImage) return;
   }
+  
 
   setIsGenerating(true);
     try {

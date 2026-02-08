@@ -32,7 +32,8 @@ export type GeneratedOutput = {
    // ✅ baru
   promptSource?: PromptSource;
   manualPrompt?: string; // optional: kalau mau simpan manual terpisah
-  draftPrompt?: string;  // optional: kalau mau simpan draft terpisah
+  draftPrompt?: string; 
+  finalprompt?:string; // optional: kalau mau simpan draft terpisah
 };
 
 export type VideoAttachment = {
