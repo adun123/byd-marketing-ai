@@ -139,7 +139,7 @@ export default function OptionsPanel({
   // ✅ validasi pakai effectivePrompt (bukan prompt state doang)
  const promptOk = effectivePrompt.trim().length >= 2;
 
-  const hasMinForI2I = attachments.length >= 2; // ✅ wajib 2
+  const hasMinForI2I = attachments.length >= 1; // ✅ wajib 1
   const hasMinForUpscale = attachments.length >= 1;
 
   const disabledGenerate =
@@ -174,11 +174,8 @@ export default function OptionsPanel({
             onPromptChange(draftVisualPrompt || "");
           }
 
-          if (m === "manual") {
-            // 🔒 manual → JANGAN pakai draftVisualPrompt
-            // opsional: reset atau biarkan user ngetik ulang
-            onPromptChange("");
-          }
+          if (m === "manual") onPromptChange("");
+
         }}
 
 
@@ -238,11 +235,12 @@ export default function OptionsPanel({
 
         <div className="max-h-40 overflow-y-auto whitespace-pre-wrap break-words">
           {previewText?.trim() ? (
-            <span className="italic"></span>
+            <span className="italic">“{previewText}”</span>
           ) : (
             <span className="text-slate-400">No script imported.</span>
           )}
         </div>
+
       </div>
 
       {/*  tombol Generate tetap ada */}

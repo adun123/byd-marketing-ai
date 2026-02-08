@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import TopBarGenerate from "../../components/layout/TopBarGenerate";
@@ -8,7 +8,7 @@ import DraftFooter from "./DraftFooter";
 // import { savePreviewContext } from "../preview-generation/utils/previewContextStorage"; // sesuaikan path
 
 import type { DraftContextPayload } from "../trends-generation/types";
-import { loadDraftContext } from "../trends-generation/utils/draftContextStorage";
+import {  loadDraftContext, saveDraftContext } from "../trends-generation/utils/draftContextStorage";
 
 import type { GenerateContentResponse } from "./types";
 import type { FinalizeContentPayload } from "../content-generation/types";
@@ -33,7 +33,10 @@ type DraftResultState = {
 const LS_KEYS = {
   draftResult: "byd:draft-result",
   generated: "byd:generated",
+  draftConfig: "byd:draft-config",       // ✅ baru
+  genKeyTopic: "byd:generated-keyTopic", // ✅ baru
 } as const;
+
 
 /** Safely parse JSON string; returns null if invalid. */
 function safeJsonParse<T>(raw: string): T | null {
@@ -56,8 +59,14 @@ export default function DraftGeneration() {
     () => (import.meta.env.VITE_API_BASE?.trim() || "/api") as string,
     []
   );
+  const [resetNonce, setResetNonce] = useState(0);
 
-  const [draftConfig, setDraftConfig] = useState<DraftConfig | null>(null);
+  const [draftConfig, setDraftConfig] = useState<DraftConfig | null>(() => {
+    if (typeof window === "undefined") return null;
+    const raw = localStorage.getItem(LS_KEYS.draftConfig);
+    return raw ? safeJsonParse<DraftConfig>(raw) : null;
+  });
+
 
   const [draftResult, setDraftResult] = useState<DraftResultState>({});
   const [generated, setGenerated] = useState<GenerateContentResponse | null>(null);
@@ -75,18 +84,43 @@ export default function DraftGeneration() {
     return Boolean(edited || photoPrompt || videoPrompt);
   }, [draftResult.visualPrompt, generated]);
 
+  const handleConfigChange = useCallback((cfg: DraftConfig) => {
+    setDraftConfig(cfg);
+    localStorage.setItem(LS_KEYS.draftConfig, JSON.stringify(cfg));
+  }, []);
+
   /** Reset semua state hasil generate & editor + bersihkan localStorage cache. */
-  function handleResetDraft() {
-    setDraftResult({ scriptHtml: "", visualPrompt: "" });
-    setGenerated(null);
+function handleResetDraft() {
+  // reset hasil kanan
+  setDraftResult({ scriptHtml: "", visualPrompt: "" });
+  setGenerated(null);
 
-    setGenError(null);
-    setGenLoading(false);
-    setIsGenerating(false);
+  setGenError(null);
+  setGenLoading(false);
+  setIsGenerating(false);
 
-    localStorage.removeItem(LS_KEYS.draftResult);
-    localStorage.removeItem(LS_KEYS.generated);
+  localStorage.removeItem(LS_KEYS.draftResult);
+  localStorage.removeItem(LS_KEYS.generated);
+  localStorage.removeItem(LS_KEYS.draftConfig);
+
+  // 🔥 RESET JUGA TRENDS CONTEXT (khusus selectedTerms)
+  const ctx = loadDraftContext();
+  if (ctx) {
+    saveDraftContext({
+      ...ctx,
+      selectedTerms: [], // ✅ inilah kuncinya
+    });
   }
+
+  // reset option kiri
+  const nextCfg = getDefaultConfig(ctx);
+  setDraftConfig(nextCfg);
+
+  // paksa OptionDraftFilter remount
+  setResetNonce((n) => n + 1);
+}
+
+
 
   /** Ambil prompt final (prioritas: hasil edit user → fallback dari generated). */
   function getFinalPrompt(): string {
@@ -158,11 +192,11 @@ export default function DraftGeneration() {
 
         const keyTopic =
           draftConfig.sourceMode === "trend"
-            ? draftConfig.terms
-                .map(t => t.replace(/\s+/g, "").trim())
-                .filter(Boolean)
-                .join("_")
-            : topic.replace(/\s+/g, "");
+            ? draftConfig.terms.map(t => t.replace(/\s+/g, "").trim().toLowerCase()).filter(Boolean).join("_")
+            : (draftConfig.topicManual || "").replace(/\s+/g, "").trim().toLowerCase();
+
+        localStorage.setItem(LS_KEYS.genKeyTopic, keyTopic);
+
 
 
       const targetKeywords = (draftConfig.keywords || "").trim();
@@ -204,28 +238,109 @@ export default function DraftGeneration() {
       setGenLoading(false);
     }
   }
+  function getDefaultConfig(ctx: DraftContextPayload | null): DraftConfig {
+  const humanizeTerm = (term: string) =>
+    term
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/([a-zA-Z])([0-9])/g, "$1 $2")
+      .replace(/^./, (s) => s.toUpperCase());
 
-  /** Persist draftResult ke localStorage setiap kali user edit hasil. */
-  useEffect(() => {
-    if (!draftResult.scriptHtml && !draftResult.visualPrompt) return;
-    localStorage.setItem(LS_KEYS.draftResult, JSON.stringify(draftResult));
-  }, [draftResult]);
+  const terms = (ctx?.selectedTerms ?? []).slice(0, 12).map(humanizeTerm);
 
-  /** Load cached generated output dari localStorage sekali saat mount. */
-  useEffect(() => {
-    const rawGen = localStorage.getItem(LS_KEYS.generated);
-    if (!rawGen) return;
+  return {
+    sourceMode: "trend",
+    terms,
+    topicManual: "",
+    audiences: ["SUV Buyers"],
+    tone: "Professional & Authoritative",
+    keywords: "",
+    slides: 1,
+    language: "id",
+  };
+}
 
-    const parsed = safeJsonParse<GenerateContentResponse>(rawGen);
-    if (parsed) setGenerated(parsed);
-  }, []);
 
-  /** Persist generated ke localStorage setelah generate selesai (hindari save saat loading). */
-  useEffect(() => {
-    if (!generated) return;
-    if (genLoading) return;
-    localStorage.setItem(LS_KEYS.generated, JSON.stringify(generated));
-  }, [generated, genLoading]);
+
+
+
+
+
+/** Persist draftResult ke localStorage setiap kali user edit hasil. */
+useEffect(() => {
+  if (!draftResult.scriptHtml && !draftResult.visualPrompt) return;
+  localStorage.setItem(LS_KEYS.draftResult, JSON.stringify(draftResult));
+}, [draftResult]);
+
+/** Persist generated ke localStorage setelah generate selesai (hindari save saat loading). */
+useEffect(() => {
+  if (!generated) return;
+  if (genLoading) return;
+  localStorage.setItem(LS_KEYS.generated, JSON.stringify(generated));
+}, [generated, genLoading]);
+
+/** Hydrate: load draftConfig + restore generated & draftResult kalau key cocok */
+useEffect(() => {
+  const rawCfg = localStorage.getItem(LS_KEYS.draftConfig);
+  const cfg = rawCfg ? safeJsonParse<DraftConfig>(rawCfg) : null;
+  if (cfg) setDraftConfig(cfg);
+
+  const savedKey = localStorage.getItem(LS_KEYS.genKeyTopic) || "";
+  if (!cfg || !savedKey) return;
+
+  const currentKey =
+    cfg.sourceMode === "trend"
+      ? cfg.terms.map(t => t.replace(/\s+/g, "").trim().toLowerCase()).filter(Boolean).join("_")
+      : (cfg.topicManual || "").replace(/\s+/g, "").trim().toLowerCase();
+
+  if (currentKey !== savedKey) return;
+
+  const rawGen = localStorage.getItem(LS_KEYS.generated);
+  if (rawGen) {
+    const parsedGen = safeJsonParse<GenerateContentResponse>(rawGen);
+    if (parsedGen) setGenerated(parsedGen);
+  }
+
+  const rawDraft = localStorage.getItem(LS_KEYS.draftResult);
+  if (rawDraft) {
+    const parsedDraft = safeJsonParse<DraftResultState>(rawDraft);
+    if (parsedDraft) setDraftResult(parsedDraft);
+  }
+}, []);
+
+useEffect(() => {
+  // kalau draftConfig sudah ada, jangan override
+  const raw = localStorage.getItem(LS_KEYS.draftConfig);
+  if (raw) return;
+
+  const ctxTerms = (ctx?.selectedTerms ?? []).filter(Boolean);
+  if (!ctxTerms.length) return;
+
+  const humanize = (term: string) =>
+    term
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/([a-zA-Z])([0-9])/g, "$1 $2")
+      .replace(/^./, (s) => s.toUpperCase());
+
+  const seeded: DraftConfig = {
+    sourceMode: "trend",
+    terms: ctxTerms.slice(0, 12).map(humanize),
+    topicManual: "",
+    audiences: ["SUV Buyers"],
+    tone: "Professional & Authoritative",
+    keywords: "",
+    slides: 1,
+    language: (ctx?.form?.language as "id" | "en") || "id",
+  };
+
+  setDraftConfig(seeded);
+  localStorage.setItem(LS_KEYS.draftConfig, JSON.stringify(seeded));
+}, [ctx]);
+
+
+
+
+
+
 
 
 
@@ -245,12 +360,17 @@ return (
           {/* LEFT */}
           <aside className="lg:sticky lg:top-[72px] lg:self-start">
             <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 p-4 shadow-sm">
-              <OptionDraftFilter
+             <OptionDraftFilter
                 draftCtx={ctx}
-                onChangeConfig={setDraftConfig}
+                key={resetNonce}
+                initialConfig={draftConfig}
+                onChangeConfig={handleConfigChange}
                 onGenerate={handleGenerate}
                 isGenerating={isGenerating}
               />
+
+
+
             </div>
 
             <div className="mt-3 rounded-2xl border border-slate-200/70 dark:border-slate-800/70 bg-white/70 dark:bg-slate-900/40 p-3 text-[11px] text-slate-600 dark:text-slate-300 lg:hidden">

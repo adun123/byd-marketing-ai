@@ -1,5 +1,5 @@
 // src/pages/draft-generation/OptionDraftFilter.tsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {   SlidersHorizontal,  } from "lucide-react";
 import type { DraftContextPayload } from "../trends-generation/types";
 import TagInput from "../../components/ui/TagInput";
@@ -17,21 +17,23 @@ function cn(...s: Array<string | undefined | false>) {
 
 type SourceMode = "trend" | "manual";
 
+type DraftConfigLike = {
+  sourceMode: SourceMode;
+  terms: string[];
+  topicManual: string;
+  audiences: string[];
+  tone: string;
+  keywords: string;
+  slides: number;
+  language: "id" | "en";
+};
+
 type Props = {
   draftCtx?: DraftContextPayload | null;
-  onChangeConfig?: (v: {
-    sourceMode: SourceMode;
-    terms: string[];
-    topicManual: string;
-    audiences: string[];
-    tone: string;
-    keywords: string;
-    slides: number;
-    language: "id" | "en";
-    
-  }) => void;
+  initialConfig?: DraftConfigLike | null; // ✅ dari localStorage (Opsi A)
+  onChangeConfig?: (v: DraftConfigLike) => void;
   onGenerate?: () => void;
-    isGenerating?: boolean;
+  isGenerating?: boolean;
 };
 
 
@@ -40,72 +42,94 @@ type Props = {
 
 
 
-export default function OptionDraftFilter({ draftCtx = null, onChangeConfig, onGenerate, isGenerating = false,  }: Props) {
-  const [sourceMode, setSourceMode] = useState<SourceMode>("trend");
-const hasSelectedTerms = (draftCtx?.selectedTerms?.length ?? 0) > 0;
-  // --- terms dari trend insight (yang sudah dipilih) ---
+export default function OptionDraftFilter({
+  draftCtx = null,
+  initialConfig = null,
+  onChangeConfig,
+  onGenerate,
+  isGenerating = false,
+}: Props) {
+  function humanizeTerm(term: string) {
+    return term
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/([a-zA-Z])([0-9])/g, "$1 $2")
+      .replace(/^./, (s) => s.toUpperCase());
+  }
+
+  const hasSelectedTerms = (draftCtx?.selectedTerms?.length ?? 0) > 0;
+
+  // fallback dari trend insight (kalau belum ada initialConfig)
   const initialTerms = useMemo(() => {
-    return (draftCtx?.selectedTerms ?? []).slice(0, 12);
+    return (draftCtx?.selectedTerms ?? []).slice(0, 12).map(humanizeTerm);
   }, [draftCtx]);
 
+  // ===== init state: prioritas initialConfig =====
+  const [sourceMode, setSourceMode] = useState<SourceMode>(
+    initialConfig?.sourceMode ?? "trend"
+  );
 
-  const [terms, setTerms] = useState<string[]>(initialTerms);
+  const [terms, setTerms] = useState<string[]>(
+    initialConfig?.terms?.length ? initialConfig.terms : initialTerms
+  );
 
-  // manual topic (kalau sourceMode manual)
-  const [topicManual, setTopicManual] = useState("");
+  const [topicManual, setTopicManual] = useState<string>(
+    initialConfig?.topicManual ?? ""
+  );
 
   // target audience chips
   const presetAudiences = useMemo(
     () => ["SUV Buyers", "Gen Z", "Car Enthusiasts", "Luxury"],
     []
   );
-  const [audiences, setAudiences] = useState<string[]>(["SUV Buyers"]);
+
+  const [audiences, setAudiences] = useState<string[]>(
+    initialConfig?.audiences?.length ? initialConfig.audiences : ["SUV Buyers"]
+  );
   const [audienceCustom, setAudienceCustom] = useState("");
- 
+
   // tone
-  const [tone, setTone] = useState("Professional & Authoritative");
+  const [tone, setTone] = useState<string>(
+    initialConfig?.tone ?? "Professional & Authoritative"
+  );
 
   // keywords
-  const [keywords, setKeywords] = useState("");
+  const [keywords, setKeywords] = useState<string>(initialConfig?.keywords ?? "");
 
   // slide count
-  const [slides] = useState(1);
-  
-  function humanizeTerm(term: string) {
-    return term
-      // spasi sebelum huruf besar
-      .replace(/([a-z])([A-Z])/g, "$1 $2")
-      // spasi sebelum angka
-      .replace(/([a-zA-Z])([0-9])/g, "$1 $2")
-      // kapital di awal
-      .replace(/^./, (s) => s.toUpperCase());
-  }
-  
-  
- 
-  //tombol
-  const canGenerate =
-  sourceMode === "trend"
-    ? terms.length > 0
-    : topicManual.trim().length > 0;
+  const [slides] = useState<number>(initialConfig?.slides ?? 1);
 
-
-  // language (opsional tapi bagus buat API kamu)
-  const [language, setLanguage] = useState<"id" | "en">("id");
-
-useEffect(() => {
-  setTerms((prev) =>
-    JSON.stringify(prev) === JSON.stringify(initialTerms)
-      ? prev
-      : initialTerms
+  // language
+  const [language, setLanguage] = useState<"id" | "en">(
+    initialConfig?.language ?? "id"
   );
-}, [initialTerms]);
+const didHydrate = useRef(false);
+  // ✅ hydrate jika initialConfig baru kebaca setelah mount
+useEffect(() => {
+  if (!initialConfig) return;
+  if (didHydrate.current) return; // ✅ cuma sekali
+  didHydrate.current = true;
 
+  setSourceMode(initialConfig.sourceMode ?? "trend");
+  setTerms(initialConfig.terms ?? []);
+  setTopicManual(initialConfig.topicManual ?? "");
+  setAudiences(
+    initialConfig.audiences?.length ? initialConfig.audiences : ["SUV Buyers"]
+  );
+  setTone(initialConfig.tone ?? "Professional & Authoritative");
+  setKeywords(initialConfig.keywords ?? "");
+  setLanguage(initialConfig.language ?? "id");
+}, [initialConfig]);
 
+  // tombol
+  const canGenerate =
+    sourceMode === "trend" ? terms.length > 0 : topicManual.trim().length > 0;
 
   function toggleAudience(a: string) {
-    setAudiences((prev) => (prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]));
+    setAudiences((prev) =>
+      prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]
+    );
   }
+
   function addCustomAudience() {
     const v = audienceCustom.trim();
     if (!v) return;
@@ -113,19 +137,26 @@ useEffect(() => {
     setAudienceCustom("");
   }
 
-  // emit config changes (optional)
-  useEffect(() => {
-    onChangeConfig?.({
-      sourceMode,
-      terms,
-      topicManual,
-      audiences,
-      tone,
-      keywords,
-      slides,
-      language,
-    });
-  }, [sourceMode, terms, topicManual, audiences, tone, keywords, slides, language, onChangeConfig]);
+const didMountRef = useRef(false);
+
+useEffect(() => {
+  if (!didMountRef.current) {
+    didMountRef.current = true;
+    return; // ✅ jangan emit saat mount pertama
+  }
+
+  onChangeConfig?.({
+    sourceMode,
+    terms,
+    topicManual,
+    audiences,
+    tone,
+    keywords,
+    slides,
+    language,
+  });
+}, [sourceMode, terms, topicManual, audiences, tone, keywords, slides, language, onChangeConfig]);
+
 
  return (
     <div className="w-full">
@@ -190,14 +221,13 @@ useEffect(() => {
               ) : (
                 <TagInput
                   label="Topic / Terms"
-                  value={terms.map(humanizeTerm)}
-                  onChange={(v) => {
-                    setTerms(v.map(t => t.replace(/\s+/g, "")));
-                  }}
+                  value={terms}        // ✅ jangan map humanize
+                  onChange={setTerms}  // ✅ jangan strip spasi di sini
                   placeholder="e.g. Range Anxiety"
                   hint="Primary topic signals"
                   max={20}
                 />
+
 
               )}
             </div>

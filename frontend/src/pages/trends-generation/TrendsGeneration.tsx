@@ -345,7 +345,8 @@ useEffect(() => {
 
   const ctx = buildDraftContext();
   saveDraftContext(ctx);
-}, [form, snapshot, searchTrends, viral, selectedTerms]);
+}, [form, snapshot, searchTrends, viral, selectedTerms, selectionTouched]); // ✅ tambah ini
+
 
 
   /* Fetch insights snapshot + trends search in parallel (settled). */

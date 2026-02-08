@@ -240,7 +240,11 @@ function handlePickImages(files: FileList) {
   const arr = Array.from(files);
   if (arr.length === 0) return;
 
-  const max = workflow === "image_to_image" ? 6 : 2;
+  const max =
+    workflow === "upscale" ? 1 :
+    workflow === "image_to_image" ? 3 :
+    2; // text_to_image: sesuai kebutuhan kamu
+
   const picked = arr.slice(0, max);
 
   const next: ImgAttachment[] = picked.map((file) => ({
@@ -256,11 +260,25 @@ function handlePickImages(files: FileList) {
       return next.slice(0, 1);
     }
 
-    // image_to_image: merge + max 6
+    // image_to_image: merge + max 3
+    if (workflow === "image_to_image") {
+      const merged = [...next, ...prev];
+      const trimmed = merged.slice(0, 3);
+
+      // revoke yang kebuang biar ga memory leak
+      merged.slice(3).forEach((x) => URL.revokeObjectURL(x.previewUrl));
+
+      return trimmed;
+    }
+
+    // text_to_image: merge + max
     const merged = [...next, ...prev];
-    return merged.slice(0, 6);
+    const trimmed = merged.slice(0, max);
+    merged.slice(max).forEach((x) => URL.revokeObjectURL(x.previewUrl));
+    return trimmed;
   });
 }
+
 
 function isContentReady(params: {
   workflow: string;
